@@ -1,0 +1,6 @@
+{
+  "name": "Gestor de Eventos Deportivos",
+  "description": "Sistema integral institucional para gestión de eventos deportivos, entrenadores, partidos en vivo, resultados con actas arbitrales y calendario de partidos pendientes con notificaciones.",
+  "requestFramePermissions": ["notifications"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

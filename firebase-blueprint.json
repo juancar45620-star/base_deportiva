@@ -1,0 +1,123 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Registered institutional users and their credentials / roles",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["admin", "entrenador", "arbitro", "estudiante", "espectador"] },
+        "avatar": { "type": "string" },
+        "phone": { "type": "string" },
+        "institutionId": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "name", "email", "role"]
+    },
+    "Coach": {
+      "title": "Coach",
+      "description": "Institutional sports coaches with availability status",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "photo": { "type": "string" },
+        "sport": { "type": "string" },
+        "status": { "type": "string", "enum": ["disponible", "en_clase", "incapacitado"] },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "schedule": { "type": "string" },
+        "currentActivity": { "type": "string" },
+        "statusNotes": { "type": "string" },
+        "experienceYears": { "type": "number" }
+      },
+      "required": ["id", "name", "sport", "status"]
+    },
+    "Match": {
+      "title": "Match",
+      "description": "Matches with exact times, venues, rosters, referee crews, and infractions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "sport": { "type": "string" },
+        "category": { "type": "string" },
+        "tournament": { "type": "string" },
+        "teamHome": { "type": "object" },
+        "teamAway": { "type": "object" },
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "venue": { "type": "string" },
+        "status": { "type": "string", "enum": ["pendiente", "en_vivo", "jugado", "cancelado"] },
+        "scoreHome": { "type": "number" },
+        "scoreAway": { "type": "number" },
+        "startTime": { "type": "string" },
+        "endTime": { "type": "string" },
+        "referees": { "type": "array" },
+        "infractions": { "type": "array" },
+        "scoreEvents": { "type": "array" },
+        "observations": { "type": "string" },
+        "notifyOnStart": { "type": "boolean" },
+        "notifyOnEnd": { "type": "boolean" }
+      },
+      "required": ["id", "sport", "tournament", "date", "time", "venue", "status"]
+    },
+    "InstitutionalEvent": {
+      "title": "InstitutionalEvent",
+      "description": "Institutional sports calendar events organized by exact dates and times",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "date": { "type": "string" },
+        "startTime": { "type": "string" },
+        "endTime": { "type": "string" },
+        "venue": { "type": "string" },
+        "category": { "type": "string" },
+        "organizer": { "type": "string" },
+        "expectedAttendees": { "type": "number" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "title", "date", "startTime", "endTime", "venue"]
+    },
+    "AppNotification": {
+      "title": "AppNotification",
+      "description": "Live match start/end alerts and institutional announcements",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "type": { "type": "string" },
+        "read": { "type": "boolean" },
+        "relatedId": { "type": "string" }
+      },
+      "required": ["id", "title", "message", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Institutional user profiles"
+    },
+    "/coaches/{coachId}": {
+      "schema": "Coach",
+      "description": "Sports coaches directory"
+    },
+    "/matches/{matchId}": {
+      "schema": "Match",
+      "description": "Sports matches and referee sheets"
+    },
+    "/events/{eventId}": {
+      "schema": "InstitutionalEvent",
+      "description": "Institutional sports events"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "AppNotification",
+      "description": "Notifications and match whistle alerts"
+    }
+  }
+}
