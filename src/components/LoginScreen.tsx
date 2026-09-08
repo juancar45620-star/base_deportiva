@@ -275,7 +275,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                       type="text"
                       value={emailOrUser}
                       onChange={(e) => setEmailOrUser(e.target.value)}
-                      placeholder="ej: juancar45620@gmail.com o Juan Carlos"
+                      placeholder="ej: juancar45620@gmail.com o Esteban Argüello"
                       className="w-full pl-10 pr-4 py-3 bg-black/50 border border-blue-900/80 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 transition-colors"
                       required
                     />
@@ -615,7 +615,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                     type="text"
                     value={recoverEmail}
                     onChange={(e) => setRecoverEmail(e.target.value)}
-                    placeholder="ej: juancar45620@gmail.com o Juan Carlos"
+                    placeholder="ej: juancar45620@gmail.com o Esteban Argüello"
                     className="w-full pl-9 pr-3 py-2.5 bg-black/40 border border-blue-900/80 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-sky-400"
                     required
                   />

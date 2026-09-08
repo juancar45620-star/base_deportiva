@@ -90,17 +90,17 @@ export class StorageService {
         });
         await batch.commit();
       } else {
-        // Enforce juancar45620@gmail.com as the unique admin in Firestore
+        // Enforce Esteban Argüello (juancar45620@gmail.com) as the unique admin in Firestore
         let hasAdminInFirestore = false;
         usersSnap.forEach((docSnap) => {
           const u = docSnap.data() as User;
           if (u.email && u.email.toLowerCase() === 'juancar45620@gmail.com') {
             hasAdminInFirestore = true;
-            if (u.role !== 'admin' || u.password !== '1234') {
-              setDoc(doc(db, 'users', docSnap.id), { ...u, role: 'admin', password: '1234' }, { merge: true });
+            if (u.role !== 'admin' || u.password !== '1234' || u.name !== 'Esteban Argüello') {
+              setDoc(doc(db, 'users', docSnap.id), { ...u, name: 'Esteban Argüello', role: 'admin', password: '1234' }, { merge: true });
             }
           } else if (u.role === 'admin') {
-            // Any other previous admin is demoted so juancar45620@gmail.com is unique admin
+            // Any other previous admin is demoted so Esteban Argüello (juancar45620@gmail.com) is unique admin
             setDoc(doc(db, 'users', docSnap.id), { ...u, role: 'entrenador' }, { merge: true });
           }
         });
@@ -231,16 +231,16 @@ export class StorageService {
       }
     }
 
-    // Guarantee juancar45620@gmail.com is the UNIQUE administrator with password 1234
+    // Guarantee Esteban Argüello (juancar45620@gmail.com) is the UNIQUE administrator with password 1234
     let hasAdmin = false;
     let modified = false;
 
     list = list.map((user) => {
       if (user.email && user.email.toLowerCase() === 'juancar45620@gmail.com') {
         hasAdmin = true;
-        if (user.role !== 'admin' || user.password !== '1234') {
+        if (user.role !== 'admin' || user.password !== '1234' || user.name !== 'Esteban Argüello') {
           modified = true;
-          return { ...user, role: 'admin', password: '1234' };
+          return { ...user, name: 'Esteban Argüello', role: 'admin', password: '1234' };
         }
         return user;
       }
@@ -269,8 +269,11 @@ export class StorageService {
     if (sessionRaw) {
       try {
         const u = JSON.parse(sessionRaw) as User;
-        // Verify admin role integrity
-        if (u.role === 'admin' && u.email.toLowerCase() !== 'juancar45620@gmail.com') {
+        // Verify admin role and name integrity
+        if (u.email && u.email.toLowerCase() === 'juancar45620@gmail.com') {
+          u.name = 'Esteban Argüello';
+          u.role = 'admin';
+        } else if (u.role === 'admin') {
           u.role = 'entrenador';
         }
         return u;
@@ -398,16 +401,19 @@ export class StorageService {
     const users = this.getUsers();
     const emailLower = newUser.email.trim().toLowerCase();
 
-    // Unique administrator enforcement: ONLY juancar45620@gmail.com can be admin
+    // Unique administrator enforcement: ONLY Esteban Argüello (juancar45620@gmail.com) can be admin
     let role = newUser.role;
-    if (role === 'admin' && emailLower !== 'juancar45620@gmail.com') {
-      role = 'estudiante';
-    } else if (emailLower === 'juancar45620@gmail.com') {
+    let name = newUser.name;
+    if (emailLower === 'juancar45620@gmail.com') {
       role = 'admin';
+      name = 'Esteban Argüello';
+    } else if (role === 'admin') {
+      role = 'estudiante';
     }
 
     const user: User = {
       ...newUser,
+      name,
       role,
       password: emailLower === 'juancar45620@gmail.com' ? '1234' : newUser.password,
       id: emailLower === 'juancar45620@gmail.com' ? 'usr-admin' : `usr-${Date.now()}`,

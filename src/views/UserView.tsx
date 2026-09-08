@@ -355,7 +355,7 @@ export const UserView: React.FC<UserViewProps> = ({
                   type="text"
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
-                  placeholder="ej: juancar45620@gmail.com o Juan Carlos"
+                  placeholder="ej: juancar45620@gmail.com o Esteban Argüello"
                   className="w-full pl-10 pr-4 py-2.5 bg-black/50 border border-blue-800/80 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 transition-colors"
                 />
               </div>
@@ -471,7 +471,7 @@ export const UserView: React.FC<UserViewProps> = ({
                   type="text"
                   value={regName}
                   onChange={(e) => setRegName(e.target.value)}
-                  placeholder="ej: Juan Carlos Pérez"
+                  placeholder="ej: Esteban Argüello"
                   className="w-full pl-10 pr-4 py-2.5 bg-black/50 border border-blue-800/80 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-sky-400"
                 />
               </div>

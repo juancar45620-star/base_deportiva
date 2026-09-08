@@ -3,7 +3,7 @@ import { Coach, Match, InstitutionalEvent, AppNotification, User } from '../type
 export const INITIAL_USERS: User[] = [
   {
     id: 'usr-admin',
-    name: 'Juan Carlos (Administrador)',
+    name: 'Esteban Argüello',
     email: 'juancar45620@gmail.com',
     role: 'admin',
     phone: '+57 300 123 4567',
