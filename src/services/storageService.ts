@@ -249,6 +249,19 @@ export class StorageService {
     );
 
     if (found) {
+      // Validate password if provided and user has a password registered
+      if (password !== undefined && password.trim() !== '') {
+        if (password.length > 10) {
+          return { success: false, error: 'La contraseña no puede exceder los 10 caracteres.' };
+        }
+        if (found.password && found.password !== password) {
+          return {
+            success: false,
+            error: 'Contraseña incorrecta. Verifica tus datos o usa la opción "Recuperar Contraseña".'
+          };
+        }
+      }
+
       this.setCurrentUser(found);
       this.addNotification({
         title: 'Inicio de Sesión Exitoso',
@@ -262,6 +275,54 @@ export class StorageService {
     return {
       success: false,
       error: 'Usuario o correo no encontrado en el registro institucional. Puedes crear una cuenta nueva o usar un perfil demo.'
+    };
+  }
+
+  public static async recoverPassword(
+    emailOrName: string,
+    newPassword: string
+  ): Promise<{ success: boolean; error?: string; message?: string }> {
+    const trimmed = emailOrName.trim().toLowerCase();
+    if (!trimmed) {
+      return { success: false, error: 'Ingresa tu usuario o correo institucional.' };
+    }
+    if (!newPassword || newPassword.length < 4) {
+      return { success: false, error: 'La nueva contraseña debe tener al menos 4 caracteres.' };
+    }
+    if (newPassword.length > 10) {
+      return { success: false, error: 'La contraseña no puede exceder el límite de 10 caracteres.' };
+    }
+
+    const users = this.getUsers();
+    const userIndex = users.findIndex(
+      u => u.email.toLowerCase() === trimmed ||
+           u.name.toLowerCase() === trimmed ||
+           u.name.toLowerCase().includes(trimmed)
+    );
+
+    if (userIndex === -1) {
+      return { success: false, error: 'No se encontró ningún usuario institucional con ese correo o nombre.' };
+    }
+
+    users[userIndex].password = newPassword;
+    localStorage.setItem(KEYS.USERS, JSON.stringify(users));
+
+    try {
+      await setDoc(doc(db, 'users', users[userIndex].id), users[userIndex]);
+    } catch (e) {
+      console.warn('Firestore recover password error:', e);
+    }
+
+    this.addNotification({
+      title: 'Contraseña Restablecida Exitosamente',
+      message: `La clave de acceso para ${users[userIndex].name} ha sido actualizada. Ya puedes iniciar sesión con tu nueva contraseña.`,
+      type: 'system',
+      read: false
+    });
+
+    return {
+      success: true,
+      message: `¡Contraseña de ${users[userIndex].name} actualizada! Ahora puedes ingresar con tu nueva clave institucional.`
     };
   }
 
@@ -378,6 +439,26 @@ export class StorageService {
     return newCoach;
   }
 
+  public static notifyCoachesAvailability(): void {
+    const coaches = this.getCoaches();
+    const available = coaches.filter(c => c.status === 'disponible').map(c => `${c.name} (${c.sport})`);
+    const inClass = coaches.filter(c => c.status === 'en_clase').map(c => `${c.name} (${c.sport})`);
+    const disabled = coaches.filter(c => c.status === 'incapacitado').map(c => `${c.name} (${c.sport})`);
+
+    const availableText = available.length > 0 ? available.join(', ') : 'Ninguno disponible en este turno';
+    const notAvailableParts: string[] = [];
+    if (inClass.length > 0) notAvailableParts.push(`En clases/entrenamiento: ${inClass.join(', ')}`);
+    if (disabled.length > 0) notAvailableParts.push(`Incapacitados/licencia: ${disabled.join(', ')}`);
+    const notAvailableText = notAvailableParts.length > 0 ? notAvailableParts.join(' | ') : 'Todos los entrenadores se encuentran disponibles';
+
+    this.addNotification({
+      title: 'Reporte Oficial: Disponibilidad de Entrenadores',
+      message: `🟢 ESTÁN PRESENTES Y DISPONIBLES: ${availableText}.\n🔴 NO DISPONIBLES AHORA: ${notAvailableText}.`,
+      type: 'coach_status',
+      read: false
+    });
+  }
+
   // --- MATCHES ---
   public static getMatches(): Match[] {
     const raw = localStorage.getItem(KEYS.MATCHES);
@@ -454,6 +535,52 @@ export class StorageService {
         title: '¡PARTIDO INICIADO!',
         message: `Ha comenzado el encuentro: ${(updatedMatch as Match).teamHome.name} vs ${(updatedMatch as Match).teamAway.name} en ${(updatedMatch as Match).venue}. Hora de inicio: ${nowStr}.`,
         type: 'match_start',
+        read: false,
+        relatedId: matchId
+      });
+    }
+    return updatedMatch;
+  }
+
+  public static async updateLiveScore(
+    matchId: string,
+    deltaHome: number,
+    deltaAway: number,
+    eventDetail?: string
+  ): Promise<Match | null> {
+    const matches = this.getMatches();
+    let updatedMatch: Match | null = null;
+
+    const newMatches = matches.map(m => {
+      if (m.id === matchId) {
+        const curHome = m.scoreHome ?? 0;
+        const curAway = m.scoreAway ?? 0;
+        const newHome = Math.max(0, curHome + deltaHome);
+        const newAway = Math.max(0, curAway + deltaAway);
+        updatedMatch = {
+          ...m,
+          scoreHome: newHome,
+          scoreAway: newAway
+        };
+        return updatedMatch;
+      }
+      return m;
+    });
+
+    if (updatedMatch) {
+      this.saveMatches(newMatches);
+      audioNotification.playGoal();
+
+      try {
+        await setDoc(doc(db, 'matches', matchId), updatedMatch);
+      } catch (e) {
+        console.warn('Firestore live score update error:', e);
+      }
+
+      this.addNotification({
+        title: `¡Anotación en Vivo! • ${(updatedMatch as Match).sport}`,
+        message: `Marcador en directo: ${(updatedMatch as Match).teamHome.name} ${(updatedMatch as Match).scoreHome} - ${(updatedMatch as Match).scoreAway} ${(updatedMatch as Match).teamAway.name}${eventDetail ? ` [${eventDetail}]` : ''}`,
+        type: 'score_update',
         read: false,
         relatedId: matchId
       });

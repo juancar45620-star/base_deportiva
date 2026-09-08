@@ -12,9 +12,13 @@ import {
   Flame,
   Search,
   Eye,
-  X
+  X,
+  Lock,
+  Shield,
+  ArrowLeft,
+  Home
 } from 'lucide-react';
-import { Match, MatchStatus } from '../types';
+import { Match, MatchStatus, User } from '../types';
 import { StorageService } from '../services/storageService';
 import { ActiveTab } from '../components/Sidebar';
 
@@ -23,17 +27,26 @@ interface MatchesViewProps {
   onMatchesChange: (matches: Match[]) => void;
   setActiveTab: (tab: ActiveTab) => void;
   onStartMatch: (matchId: string) => void;
+  currentUser?: User | null;
+  onGoBack?: () => void;
+  onGoHome?: () => void;
 }
 
 export const MatchesView: React.FC<MatchesViewProps> = ({
   matches,
   onMatchesChange,
   setActiveTab,
-  onStartMatch
+  onStartMatch,
+  currentUser,
+  onGoBack,
+  onGoHome
 }) => {
   const [tabFilter, setTabFilter] = useState<'todos' | 'pendiente' | 'jugado' | 'en_vivo'>('todos');
   const [search, setSearch] = useState('');
   const [sportFilter, setSportFilter] = useState<string>('todos');
+
+  // RBAC rule: Only coaches and administrators can schedule matches and trigger notifications
+  const canScheduleMatches = currentUser?.role === 'admin' || currentUser?.role === 'entrenador';
 
   // Modal for adding new match
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -117,6 +130,37 @@ export const MatchesView: React.FC<MatchesViewProps> = ({
 
   return (
     <div className="space-y-6 pb-12">
+      {/* Top Breadcrumbs / Return navigation */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          {onGoBack && (
+            <button
+              onClick={onGoBack}
+              className="px-3 py-1.5 rounded-xl bg-[#0B192C] hover:bg-blue-900 border border-blue-900/80 text-sky-200 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 text-sky-400" />
+              <span>Volver a lo anterior</span>
+            </button>
+          )}
+          {onGoHome && (
+            <button
+              onClick={onGoHome}
+              className="px-3 py-1.5 rounded-xl bg-black/40 hover:bg-blue-900 border border-blue-900/80 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow"
+            >
+              <Home className="w-3.5 h-3.5 text-sky-400" />
+              <span>Inicio</span>
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 text-xs">
+          <span className="text-slate-400 hidden sm:inline">Tu Rol:</span>
+          <span className="px-2.5 py-1 rounded-full bg-blue-950 border border-blue-800 text-sky-300 font-bold uppercase text-[10px] tracking-wider">
+            {currentUser ? currentUser.role : 'Invitado'}
+          </span>
+        </div>
+      </div>
+
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#0B192C] border border-blue-900/60 p-5 rounded-2xl text-white shadow-xl">
         <div>
@@ -125,17 +169,28 @@ export const MatchesView: React.FC<MatchesViewProps> = ({
             Programación e Historial de Partidos
           </h2>
           <p className="text-xs text-blue-200 mt-0.5">
-            Registro cronológico de encuentros que faltan por jugar y partidos ya disputados
+            Registro cronológico de partidos por jugar y jugados. Solo entrenadores y administradores pueden programar partidos.
           </p>
         </div>
 
-        <button
-          onClick={() => setIsAddOpen(true)}
-          className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-blue-600/30 transition-all shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          Programar Nuevo Partido
-        </button>
+        {canScheduleMatches ? (
+          <button
+            onClick={() => setIsAddOpen(true)}
+            id="btn-schedule-match"
+            className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-blue-600/30 transition-all shrink-0 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            Programar Nuevo Partido
+          </button>
+        ) : (
+          <div
+            title="Solo entrenadores y administradores pueden programar partidos"
+            className="px-3 py-2 rounded-xl bg-black/40 border border-blue-900/60 text-slate-400 text-xs flex items-center gap-1.5"
+          >
+            <Lock className="w-3.5 h-3.5 text-slate-500" />
+            <span className="text-[11px]">Programación reservada a entrenadores y admin</span>
+          </div>
+        )}
       </div>
 
       {/* Filter Tabs & Search */}
@@ -340,22 +395,29 @@ export const MatchesView: React.FC<MatchesViewProps> = ({
               {/* Action Buttons */}
               <div className="mt-4 pt-3 border-t border-blue-950 flex items-center justify-between gap-2">
                 {isPending && (
-                  <button
-                    onClick={() => onStartMatch(match.id)}
-                    className="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow"
-                  >
-                    <Flame className="w-3.5 h-3.5" />
-                    Iniciar Partido Ahora
-                  </button>
+                  canScheduleMatches ? (
+                    <button
+                      onClick={() => onStartMatch(match.id)}
+                      className="w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow cursor-pointer transition-all"
+                    >
+                      <Flame className="w-3.5 h-3.5" />
+                      Iniciar Partido en Vivo
+                    </button>
+                  ) : (
+                    <div className="w-full py-2 px-3 rounded-xl bg-black/40 border border-blue-950 text-slate-400 text-xs font-medium flex items-center justify-center gap-1.5 text-center">
+                      <Clock className="w-3.5 h-3.5 text-slate-500" />
+                      <span className="text-[11px]">Programado • Esperando inicio por entrenador</span>
+                    </div>
+                  )
                 )}
 
                 {isLive && (
                   <button
                     onClick={() => setActiveTab('partidos_pendientes')}
-                    className="w-full py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow animate-bounce"
+                    className="w-full py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow animate-pulse cursor-pointer"
                   >
-                    <Clock className="w-3.5 h-3.5" />
-                    Finalizar y Registrar Marcador
+                    <Flame className="w-3.5 h-3.5 text-amber-300" />
+                    <span>{canScheduleMatches ? 'Controlar Marcador en Vivo' : 'Ver Transmisión en Vivo'}</span>
                   </button>
                 )}
 

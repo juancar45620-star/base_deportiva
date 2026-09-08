@@ -12,20 +12,37 @@ import {
   CheckCircle,
   Tag,
   Search,
-  X
+  Lock,
+  Shield,
+  X,
+  ArrowLeft,
+  Home
 } from 'lucide-react';
-import { InstitutionalEvent } from '../types';
+import { InstitutionalEvent, User } from '../types';
 import { StorageService } from '../services/storageService';
 
 interface EventsViewProps {
   events: InstitutionalEvent[];
   onEventsChange: (events: InstitutionalEvent[]) => void;
+  currentUser?: User | null;
+  onGoBack?: () => void;
+  onGoHome?: () => void;
 }
 
-export const EventsView: React.FC<EventsViewProps> = ({ events, onEventsChange }) => {
+export const EventsView: React.FC<EventsViewProps> = ({
+  events,
+  onEventsChange,
+  currentUser,
+  onGoBack,
+  onGoHome
+}) => {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('todos');
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [notifSuccessMsg, setNotifSuccessMsg] = useState<string | null>(null);
+
+  // RBAC: Only coaches and administrators can create events and activate event notifications
+  const canManageEvents = currentUser?.role === 'admin' || currentUser?.role === 'entrenador';
 
   // New Event Form State
   const [title, setTitle] = useState('');
@@ -55,6 +72,7 @@ export const EventsView: React.FC<EventsViewProps> = ({ events, onEventsChange }
 
   const handleAddEvent = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canManageEvents) return;
     if (!title.trim() || !date) return;
 
     StorageService.addEvent({
@@ -72,6 +90,8 @@ export const EventsView: React.FC<EventsViewProps> = ({ events, onEventsChange }
 
     onEventsChange(StorageService.getEvents());
     setIsAddOpen(false);
+    setNotifSuccessMsg(`Evento "${title.trim()}" agendado con éxito.`);
+    setTimeout(() => setNotifSuccessMsg(null), 4000);
     // Reset
     setTitle('');
     setDescription('');
@@ -79,7 +99,10 @@ export const EventsView: React.FC<EventsViewProps> = ({ events, onEventsChange }
   };
 
   const handleTriggerAlert = (event: InstitutionalEvent) => {
+    if (!canManageEvents) return;
     StorageService.triggerEventAlert(event);
+    setNotifSuccessMsg(`Notificación del evento "${event.title}" enviada a todos los usuarios.`);
+    setTimeout(() => setNotifSuccessMsg(null), 4000);
   };
 
   const getCategoryBadge = (cat: string) => {
@@ -102,6 +125,53 @@ export const EventsView: React.FC<EventsViewProps> = ({ events, onEventsChange }
 
   return (
     <div className="space-y-6 pb-12">
+      {/* Top Breadcrumbs / Return navigation */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          {onGoBack && (
+            <button
+              onClick={onGoBack}
+              className="px-3 py-1.5 rounded-xl bg-[#0B192C] hover:bg-blue-900 border border-blue-900/80 text-sky-200 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 text-sky-400" />
+              <span>Volver a lo anterior</span>
+            </button>
+          )}
+          {onGoHome && (
+            <button
+              onClick={onGoHome}
+              className="px-3 py-1.5 rounded-xl bg-black/40 hover:bg-blue-900 border border-blue-900/80 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow"
+            >
+              <Home className="w-3.5 h-3.5 text-sky-400" />
+              <span>Inicio</span>
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 text-xs">
+          <span className="text-slate-400 hidden sm:inline">Tu Rol:</span>
+          <span className="px-2.5 py-1 rounded-full bg-blue-950 border border-blue-800 text-sky-300 font-bold uppercase text-[10px] tracking-wider">
+            {currentUser ? currentUser.role : 'Invitado'}
+          </span>
+        </div>
+      </div>
+
+      {/* Notification Toast */}
+      {notifSuccessMsg && (
+        <div className="p-3.5 rounded-xl bg-emerald-950/90 border border-emerald-700 text-emerald-200 text-xs flex items-center justify-between gap-3 shadow-lg">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>{notifSuccessMsg}</span>
+          </div>
+          <button
+            onClick={() => setNotifSuccessMsg(null)}
+            className="text-emerald-400 hover:text-white"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Header with action */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#0B192C] border border-blue-900/60 p-5 rounded-2xl text-white shadow-xl">
         <div>
@@ -110,17 +180,28 @@ export const EventsView: React.FC<EventsViewProps> = ({ events, onEventsChange }
             Cronología de Eventos Institucionales
           </h2>
           <p className="text-xs text-blue-200 mt-0.5">
-            Organización estructurada por fechas y horas exactas programadas por la institución
+            Organización por fechas y horas exactas. Solo entrenadores y administradores activan notificaciones a los usuarios.
           </p>
         </div>
 
-        <button
-          onClick={() => setIsAddOpen(true)}
-          className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-blue-600/30 transition-all shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          Agendar Nuevo Evento
-        </button>
+        {canManageEvents ? (
+          <button
+            onClick={() => setIsAddOpen(true)}
+            id="btn-schedule-event"
+            className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-blue-600/30 transition-all shrink-0 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            Agendar Nuevo Evento
+          </button>
+        ) : (
+          <div
+            title="Solo entrenadores y administradores pueden agendar y notificar eventos"
+            className="px-3 py-2 rounded-xl bg-black/40 border border-blue-900/60 text-slate-400 text-xs flex items-center gap-1.5"
+          >
+            <Lock className="w-3.5 h-3.5 text-slate-500" />
+            <span className="text-[11px]">Agendamiento reservado a entrenadores y admin</span>
+          </div>
+        )}
       </div>
 
       {/* Filter Bar */}
@@ -244,13 +325,20 @@ export const EventsView: React.FC<EventsViewProps> = ({ events, onEventsChange }
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => handleTriggerAlert(event)}
-                    className="px-3 py-1.5 rounded-xl bg-blue-950 hover:bg-blue-900 border border-blue-700 text-sky-200 hover:text-white font-semibold text-xs flex items-center gap-1.5 transition-colors shadow"
-                  >
-                    <Bell className="w-3.5 h-3.5 text-sky-400" />
-                    Enviar Notificación
-                  </button>
+                  {canManageEvents ? (
+                    <button
+                      onClick={() => handleTriggerAlert(event)}
+                      className="px-3 py-1.5 rounded-xl bg-blue-950 hover:bg-blue-900 border border-blue-700 text-sky-200 hover:text-white font-semibold text-xs flex items-center gap-1.5 transition-colors shadow cursor-pointer"
+                    >
+                      <Bell className="w-3.5 h-3.5 text-sky-400" />
+                      Activar Notificación
+                    </button>
+                  ) : (
+                    <div className="px-2.5 py-1 rounded-lg bg-black/40 border border-blue-950 text-[11px] text-slate-400 flex items-center gap-1">
+                      <Bell className="w-3 h-3 text-slate-500" />
+                      <span>Notificación oficial activa</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

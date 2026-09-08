@@ -10,7 +10,9 @@ import {
   Calendar,
   Clock,
   Database,
-  LogOut
+  LogOut,
+  ArrowLeft,
+  Home
 } from 'lucide-react';
 import { User, AppNotification } from '../types';
 import { ActiveTab } from './Sidebar';
@@ -26,6 +28,9 @@ interface HeaderProps {
   soundEnabled: boolean;
   onToggleSound: () => void;
   onLogout?: () => void;
+  onGoBack?: () => void;
+  onGoHome?: () => void;
+  canGoBack?: boolean;
 }
 
 const TAB_TITLES: Record<ActiveTab, { title: string; subtitle: string; icon: any }> = {
@@ -75,33 +80,61 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenMobileMenu,
   soundEnabled,
   onToggleSound,
-  onLogout
+  onLogout,
+  onGoBack,
+  onGoHome,
+  canGoBack = true
 }) => {
   const currentTabInfo = TAB_TITLES[activeTab] || TAB_TITLES.inicio;
   const CurrentIcon = currentTabInfo.icon;
 
   return (
     <header className="sticky top-0 z-20 bg-[#0B192C] border-b border-blue-900/60 shadow-md text-white">
-      <div className="px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4">
-        {/* Left side: Hamburger & Title */}
-        <div className="flex items-center gap-3 min-w-0">
+      <div className="px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
+        {/* Left side: Hamburger, Navigation buttons & Title */}
+        <div className="flex items-center gap-2.5 min-w-0">
           <button
             onClick={onOpenMobileMenu}
-            className="md:hidden p-2 rounded-xl bg-black/40 text-blue-200 hover:text-white border border-blue-800/40 hover:bg-blue-900/50 transition-colors"
+            className="md:hidden p-2 rounded-xl bg-black/40 text-blue-200 hover:text-white border border-blue-800/40 hover:bg-blue-900/50 transition-colors shrink-0"
             aria-label="Abrir menú de navegación"
           >
             <Menu className="w-5 h-5" />
           </button>
 
+          {/* Quick Back and Home buttons */}
+          {activeTab !== 'inicio' && (
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                onClick={onGoBack}
+                id="btn-header-back"
+                title="Volver a la vista anterior"
+                className="px-2.5 py-1.5 rounded-xl bg-blue-950/90 hover:bg-blue-900 border border-blue-800 text-sky-200 hover:text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow cursor-pointer"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 text-sky-400" />
+                <span className="hidden sm:inline">Volver</span>
+              </button>
+
+              <button
+                onClick={onGoHome}
+                id="btn-header-home"
+                title="Volver al Inicio"
+                className="px-2.5 py-1.5 rounded-xl bg-black/40 hover:bg-blue-900 border border-blue-800/80 text-slate-200 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow cursor-pointer"
+              >
+                <Home className="w-3.5 h-3.5 text-sky-400" />
+                <span className="hidden sm:inline">Inicio</span>
+              </button>
+            </div>
+          )}
+
           <div className="flex items-center gap-3 min-w-0">
-            <div className="hidden sm:flex p-2.5 rounded-xl bg-blue-950/80 border border-blue-800/60 text-sky-400">
+            <div className="hidden sm:flex p-2.5 rounded-xl bg-blue-950/80 border border-blue-800/60 text-sky-400 shrink-0">
               <CurrentIcon className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <h2 className="text-base sm:text-lg font-bold text-white tracking-tight truncate flex items-center gap-2">
+              <h2 className="text-sm sm:text-base font-bold text-white tracking-tight truncate flex items-center gap-2">
                 {currentTabInfo.title}
               </h2>
-              <p className="text-xs text-blue-200/80 hidden sm:block truncate">
+              <p className="text-[11px] text-blue-200/80 hidden md:block truncate">
                 {currentTabInfo.subtitle}
               </p>
             </div>

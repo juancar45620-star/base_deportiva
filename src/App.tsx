@@ -22,6 +22,7 @@ import { User, Coach, Match, InstitutionalEvent, AppNotification } from './types
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('inicio');
+  const [tabHistory, setTabHistory] = useState<ActiveTab[]>(['inicio']);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [coaches, setCoaches] = useState<Coach[]>(StorageService.getCoaches());
   const [matches, setMatches] = useState<Match[]>(StorageService.getMatches());
@@ -30,6 +31,29 @@ export default function App() {
   const [isNotificationsModalOpen, setIsNotificationsModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(audioNotification.isSoundEnabled());
+
+  const handleNavigate = (tab: ActiveTab) => {
+    setTabHistory(prev => (prev[prev.length - 1] === tab ? prev : [...prev, tab]));
+    setActiveTab(tab);
+  };
+
+  const handleGoBack = () => {
+    if (tabHistory.length > 1) {
+      const newHistory = [...tabHistory];
+      newHistory.pop(); // Remove current tab
+      const previousTab = newHistory[newHistory.length - 1];
+      setTabHistory(newHistory);
+      setActiveTab(previousTab);
+    } else {
+      setActiveTab('inicio');
+      setTabHistory(['inicio']);
+    }
+  };
+
+  const handleGoHome = () => {
+    setActiveTab('inicio');
+    setTabHistory(['inicio']);
+  };
 
   // Load initial data and subscribe to Firebase Firestore live streams
   useEffect(() => {
@@ -119,13 +143,13 @@ export default function App() {
       {/* Sidebar navigation in Dark Blue with White Text */}
       <Sidebar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleNavigate}
         currentUser={currentUser}
         pendingMatchesCount={pendingMatchesCount}
         isOpenMobile={isMobileMenuOpen}
         setIsOpenMobile={setIsMobileMenuOpen}
         onOpenRegister={() => {
-          setActiveTab('usuario');
+          handleNavigate('usuario');
         }}
         onLogout={handleLogout}
       />
@@ -135,7 +159,7 @@ export default function App() {
         {/* Sticky Header with notifications and sound */}
         <Header
           activeTab={activeTab}
-          setActiveTab={setActiveTab}
+          setActiveTab={handleNavigate}
           currentUser={currentUser}
           unreadCount={unreadNotificationsCount}
           onOpenNotifications={() => setIsNotificationsModalOpen(true)}
@@ -153,7 +177,7 @@ export default function App() {
               matches={matches}
               events={events}
               currentUser={currentUser}
-              setActiveTab={setActiveTab}
+              setActiveTab={handleNavigate}
               onStartMatch={handleStartMatch}
             />
           )}
@@ -162,6 +186,8 @@ export default function App() {
             <UserView
               currentUser={currentUser}
               setCurrentUser={setCurrentUser}
+              onGoBack={handleGoBack}
+              onGoHome={handleGoHome}
             />
           )}
 
@@ -169,6 +195,9 @@ export default function App() {
             <CoachesView
               coaches={coaches}
               onCoachesChange={setCoaches}
+              currentUser={currentUser}
+              onGoBack={handleGoBack}
+              onGoHome={handleGoHome}
             />
           )}
 
@@ -176,8 +205,11 @@ export default function App() {
             <MatchesView
               matches={matches}
               onMatchesChange={setMatches}
-              setActiveTab={setActiveTab}
+              setActiveTab={handleNavigate}
               onStartMatch={handleStartMatch}
+              currentUser={currentUser}
+              onGoBack={handleGoBack}
+              onGoHome={handleGoHome}
             />
           )}
 
@@ -185,6 +217,9 @@ export default function App() {
             <EventsView
               events={events}
               onEventsChange={setEvents}
+              currentUser={currentUser}
+              onGoBack={handleGoBack}
+              onGoHome={handleGoHome}
             />
           )}
 
@@ -192,6 +227,9 @@ export default function App() {
             <ResultsView
               matches={matches}
               onMatchesChange={setMatches}
+              currentUser={currentUser}
+              onGoBack={handleGoBack}
+              onGoHome={handleGoHome}
             />
           )}
 
@@ -199,7 +237,10 @@ export default function App() {
             <PendingMatchesView
               matches={matches}
               onMatchesChange={setMatches}
-              setActiveTab={setActiveTab}
+              setActiveTab={handleNavigate}
+              currentUser={currentUser}
+              onGoBack={handleGoBack}
+              onGoHome={handleGoHome}
             />
           )}
         </main>

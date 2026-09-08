@@ -13,7 +13,10 @@ import {
   User as UserIcon,
   Sparkles,
   ArrowRight,
-  Database
+  Database,
+  Key,
+  RotateCcw,
+  X
 } from 'lucide-react';
 import { User, UserRole } from '../types';
 import { StorageService } from '../services/storageService';
@@ -37,9 +40,20 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
+  const [showRegPassword, setShowRegPassword] = useState(false);
   const [regPhone, setRegPhone] = useState('');
   const [regRole, setRegRole] = useState<UserRole>('estudiante');
   const [regError, setRegError] = useState('');
+
+  // Password Recovery states
+  const [showRecoverModal, setShowRecoverModal] = useState(false);
+  const [recoverEmail, setRecoverEmail] = useState('');
+  const [recoverNewPass, setRecoverNewPass] = useState('');
+  const [recoverConfirmPass, setRecoverConfirmPass] = useState('');
+  const [showRecoverPass, setShowRecoverPass] = useState(false);
+  const [recoverMsg, setRecoverMsg] = useState('');
+  const [recoverError, setRecoverError] = useState('');
+  const [isRecovering, setIsRecovering] = useState(false);
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +61,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
 
     if (!emailOrUser.trim()) {
       setLoginError('Ingresa tu usuario o correo electrónico.');
+      return;
+    }
+
+    if (password.length > 10) {
+      setLoginError('La contraseña no puede tener más de 10 caracteres.');
       return;
     }
 
@@ -72,8 +91,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       return;
     }
 
-    if (regPassword.length < 4) {
-      setRegError('La contraseña debe tener al menos 4 caracteres.');
+    if (regPassword.length < 4 || regPassword.length > 10) {
+      setRegError('La contraseña debe tener entre 4 y 10 caracteres como máximo.');
       return;
     }
 
@@ -83,13 +102,51 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
         name: regName.trim(),
         email: regEmail.trim(),
         role: regRole,
-        phone: regPhone.trim() || undefined
+        phone: regPhone.trim() || undefined,
+        password: regPassword.trim()
       });
       setIsLoading(false);
       onLogin(newUser);
     } catch {
       setIsLoading(false);
       setRegError('Error al registrar la cuenta. Inténtalo nuevamente.');
+    }
+  };
+
+  const handleRecoverSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRecoverError('');
+    setRecoverMsg('');
+
+    if (!recoverEmail.trim()) {
+      setRecoverError('Por favor ingresa tu correo institucional o usuario.');
+      return;
+    }
+
+    if (recoverNewPass.length < 4 || recoverNewPass.length > 10) {
+      setRecoverError('La nueva contraseña debe tener entre 4 y 10 caracteres.');
+      return;
+    }
+
+    if (recoverNewPass !== recoverConfirmPass) {
+      setRecoverError('Las contraseñas no coinciden. Por favor verifica.');
+      return;
+    }
+
+    setIsRecovering(true);
+    const res = await StorageService.recoverPassword(recoverEmail, recoverNewPass);
+    setIsRecovering(false);
+
+    if (res.success) {
+      setRecoverMsg(res.message || 'Contraseña actualizada exitosamente.');
+      setEmailOrUser(recoverEmail);
+      setPassword(recoverNewPass);
+      setTimeout(() => {
+        setShowRecoverModal(false);
+        setRecoverMsg('');
+      }, 2500);
+    } else {
+      setRecoverError(res.error || 'No se pudo recuperar la contraseña.');
     }
   };
 
@@ -221,9 +278,14 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-200 mb-1.5">
-                    Contraseña <span className="text-sky-400">*</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-200">
+                      Contraseña <span className="text-sky-400">*</span>
+                    </label>
+                    <span className="text-[11px] text-slate-400">
+                      Máx. 10 caracteres ({password.length}/10)
+                    </span>
+                  </div>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                       <Lock className="w-4 h-4" />
@@ -231,19 +293,38 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                     <input
                       id="login-input-password"
                       type={showPassword ? 'text' : 'password'}
+                      maxLength={10}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
+                      placeholder="Máx. 10 caracteres"
                       className="w-full pl-10 pr-10 py-3 bg-black/50 border border-blue-900/80 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 transition-colors"
                       required
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white"
+                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white cursor-pointer"
                       tabIndex={-1}
+                      title={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-end pt-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowRecoverModal(true);
+                        setRecoverEmail(emailOrUser);
+                        setRecoverNewPass('');
+                        setRecoverConfirmPass('');
+                        setRecoverError('');
+                        setRecoverMsg('');
+                      }}
+                      className="text-xs text-sky-400 hover:text-sky-300 hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                    >
+                      <Key className="w-3.5 h-3.5" />
+                      <span>¿Olvidaste tu contraseña? Recuperar</span>
                     </button>
                   </div>
                 </div>
@@ -401,18 +482,38 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-200 mb-1">
-                  Contraseña de Acceso <span className="text-sky-400">*</span>
-                </label>
-                <input
-                  id="reg-input-password"
-                  type="password"
-                  value={regPassword}
-                  onChange={(e) => setRegPassword(e.target.value)}
-                  placeholder="Mínimo 4 caracteres"
-                  className="w-full px-3.5 py-2.5 bg-black/50 border border-blue-900/80 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-sky-400"
-                  required
-                />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-200">
+                    Contraseña de Acceso <span className="text-sky-400">*</span>
+                  </label>
+                  <span className="text-[11px] text-slate-400">
+                    Máx. 10 caracteres ({regPassword.length}/10)
+                  </span>
+                </div>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <Lock className="w-4 h-4" />
+                  </div>
+                  <input
+                    id="reg-input-password"
+                    type={showRegPassword ? 'text' : 'password'}
+                    maxLength={10}
+                    value={regPassword}
+                    onChange={(e) => setRegPassword(e.target.value)}
+                    placeholder="Mínimo 4 y máximo 10 caracteres"
+                    className="w-full pl-10 pr-10 py-2.5 bg-black/50 border border-blue-900/80 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowRegPassword(!showRegPassword)}
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-white cursor-pointer"
+                    tabIndex={-1}
+                    title={showRegPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                  >
+                    {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               <button
@@ -444,6 +545,144 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
           <span>Portal Seguro Institucional 2026</span>
         </div>
       </div>
+
+      {/* MODAL: RECUPERAR CONTRASEÑA */}
+      {showRecoverModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#0B192C] border border-blue-800 rounded-2xl w-full max-w-md p-6 text-white shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-blue-900/80 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-blue-950 border border-blue-800 rounded-xl text-sky-400">
+                  <Key className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-white">Recuperar Contraseña</h3>
+                  <p className="text-xs text-blue-200">Restablece tu acceso institucional</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowRecoverModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {recoverError && (
+              <div className="p-3 rounded-xl bg-rose-950/80 border border-rose-800 text-rose-200 text-xs flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                <span>{recoverError}</span>
+              </div>
+            )}
+
+            {recoverMsg && (
+              <div className="p-3 rounded-xl bg-emerald-950/80 border border-emerald-800 text-emerald-200 text-xs flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <span>{recoverMsg}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleRecoverSubmit} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-200 mb-1">
+                  Correo Institucional o Usuario <span className="text-sky-400">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="text"
+                    value={recoverEmail}
+                    onChange={(e) => setRecoverEmail(e.target.value)}
+                    placeholder="ej: director@deportes.edu o Roberto Morales"
+                    className="w-full pl-9 pr-3 py-2.5 bg-black/40 border border-blue-900/80 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-sky-400"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-semibold text-slate-200">
+                    Nueva Contraseña <span className="text-sky-400">*</span>
+                  </label>
+                  <span className="text-[11px] text-slate-400">
+                    Máx. 10 caracteres ({recoverNewPass.length}/10)
+                  </span>
+                </div>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <Lock className="w-4 h-4" />
+                  </div>
+                  <input
+                    type={showRecoverPass ? 'text' : 'password'}
+                    maxLength={10}
+                    value={recoverNewPass}
+                    onChange={(e) => setRecoverNewPass(e.target.value)}
+                    placeholder="Entre 4 y 10 caracteres"
+                    className="w-full pl-9 pr-10 py-2.5 bg-black/40 border border-blue-900/80 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-sky-400"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowRecoverPass(!showRecoverPass)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white cursor-pointer"
+                    tabIndex={-1}
+                    title={showRecoverPass ? 'Ocultar contraseña' : 'Ver contraseña'}
+                  >
+                    {showRecoverPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-200 mb-1">
+                  Confirmar Nueva Contraseña <span className="text-sky-400">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <Lock className="w-4 h-4" />
+                  </div>
+                  <input
+                    type={showRecoverPass ? 'text' : 'password'}
+                    maxLength={10}
+                    value={recoverConfirmPass}
+                    onChange={(e) => setRecoverConfirmPass(e.target.value)}
+                    placeholder="Repite la nueva contraseña"
+                    className="w-full pl-9 pr-10 py-2.5 bg-black/40 border border-blue-900/80 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-sky-400"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowRecoverModal(false)}
+                  className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isRecovering}
+                  className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
+                >
+                  {isRecovering ? (
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                  ) : (
+                    <>
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Restablecer</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

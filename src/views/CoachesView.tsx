@@ -13,19 +13,34 @@ import {
   Briefcase,
   CheckCircle2,
   X,
-  Sparkles
+  Sparkles,
+  Lock,
+  Shield,
+  Bell,
+  ArrowLeft,
+  Home
 } from 'lucide-react';
-import { Coach, CoachStatus } from '../types';
+import { Coach, CoachStatus, User } from '../types';
 import { StorageService } from '../services/storageService';
 
 interface CoachesViewProps {
   coaches: Coach[];
   onCoachesChange: (coaches: Coach[]) => void;
+  currentUser?: User | null;
+  onGoBack?: () => void;
+  onGoHome?: () => void;
 }
 
-export const CoachesView: React.FC<CoachesViewProps> = ({ coaches, onCoachesChange }) => {
+export const CoachesView: React.FC<CoachesViewProps> = ({
+  coaches,
+  onCoachesChange,
+  currentUser,
+  onGoBack,
+  onGoHome
+}) => {
   const [filter, setFilter] = useState<'todos' | CoachStatus>('todos');
   const [search, setSearch] = useState('');
+  const [broadcastMessage, setBroadcastMessage] = useState<string | null>(null);
   
   // State for updating status modal
   const [selectedCoach, setSelectedCoach] = useState<Coach | null>(null);
@@ -42,6 +57,34 @@ export const CoachesView: React.FC<CoachesViewProps> = ({ coaches, onCoachesChan
   const [initialStatus, setInitialStatus] = useState<CoachStatus>('disponible');
   const [experienceYears, setExperienceYears] = useState(5);
 
+  const canActivateNotifications = currentUser?.role === 'admin' || currentUser?.role === 'entrenador';
+
+  // Specific rule: Only the coach themselves or an administrator can update their status
+  const canChangeCoachStatus = (coach: Coach): boolean => {
+    if (!currentUser) return false;
+    if (currentUser.role === 'admin') return true;
+    if (currentUser.role === 'entrenador') {
+      const uEmail = (currentUser.email || '').toLowerCase().trim();
+      const cEmail = (coach.email || '').toLowerCase().trim();
+      const uName = (currentUser.name || '').toLowerCase().trim();
+      const cName = (coach.name || '').toLowerCase().trim();
+
+      return (
+        (uEmail && cEmail && uEmail === cEmail) ||
+        (uName && cName && (uName.includes(cName) || cName.includes(uName))) ||
+        currentUser.id === coach.id
+      );
+    }
+    return false;
+  };
+
+  const handleBroadcastAvailability = () => {
+    if (!canActivateNotifications) return;
+    const notif = StorageService.notifyCoachesAvailability();
+    setBroadcastMessage('Notificación enviada a todos los usuarios: reporte de entrenadores disponibles, en clase y en descanso emitido con éxito.');
+    setTimeout(() => setBroadcastMessage(null), 5000);
+  };
+
   const filteredCoaches = coaches.filter(coach => {
     const matchesFilter = filter === 'todos' ? true : coach.status === filter;
     const matchesSearch =
@@ -57,6 +100,10 @@ export const CoachesView: React.FC<CoachesViewProps> = ({ coaches, onCoachesChan
   const handleUpdateStatus = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCoach) return;
+    if (!canChangeCoachStatus(selectedCoach)) {
+      alert('Permiso denegado: Solo el propio entrenador o el Administrador pueden cambiar este estado.');
+      return;
+    }
     const updated = StorageService.updateCoachStatus(selectedCoach.id, newStatus, statusNotes);
     onCoachesChange(updated);
     setSelectedCoach(null);
@@ -114,25 +161,98 @@ export const CoachesView: React.FC<CoachesViewProps> = ({ coaches, onCoachesChan
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header with Search and Add Coach */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#0B192C] border border-blue-900/60 p-5 rounded-2xl text-white shadow-xl">
+      {/* Top Breadcrumb / Return buttons */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          {onGoBack && (
+            <button
+              onClick={onGoBack}
+              className="px-3 py-1.5 rounded-xl bg-[#0B192C] hover:bg-blue-900 border border-blue-900/80 text-sky-200 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 text-sky-400" />
+              <span>Volver a lo anterior</span>
+            </button>
+          )}
+          {onGoHome && (
+            <button
+              onClick={onGoHome}
+              className="px-3 py-1.5 rounded-xl bg-black/40 hover:bg-blue-900 border border-blue-900/80 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow"
+            >
+              <Home className="w-3.5 h-3.5 text-sky-400" />
+              <span>Inicio</span>
+            </button>
+          )}
+        </div>
+
+        {/* Role indicator pill */}
+        <div className="flex items-center gap-2 text-xs">
+          <span className="text-slate-400 hidden sm:inline">Tu Rol:</span>
+          <span className="px-2.5 py-1 rounded-full bg-blue-950 border border-blue-800 text-sky-300 font-bold uppercase text-[10px] tracking-wider">
+            {currentUser ? currentUser.role : 'Invitado'}
+          </span>
+        </div>
+      </div>
+
+      {/* Broadcast Message Banner if triggered */}
+      {broadcastMessage && (
+        <div className="p-3.5 rounded-xl bg-emerald-950/90 border border-emerald-700 text-emerald-200 text-xs flex items-center justify-between gap-3 shadow-lg animate-in fade-in duration-200">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>{broadcastMessage}</span>
+          </div>
+          <button
+            onClick={() => setBroadcastMessage(null)}
+            className="text-emerald-400 hover:text-white"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Header with Search, Notification Broadcaster, and Add Coach */}
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 bg-[#0B192C] border border-blue-900/60 p-5 rounded-2xl text-white shadow-xl">
         <div>
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             <Users className="w-5 h-5 text-sky-400" />
             Directorio y Estado de Entrenadores
           </h2>
           <p className="text-xs text-blue-200 mt-0.5">
-            Supervisa disponibilidad, sesiones de entrenamiento en curso y licencias médicas
+            Supervisa disponibilidad, sesiones en curso e incapacidades médicas. Solo el entrenador o el administrador pueden alterar el estado.
           </p>
         </div>
 
-        <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-blue-600/30 transition-all shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-          Registrar Entrenador
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+          {/* Broadcaster button: Entrenadores and Administradores only */}
+          {canActivateNotifications ? (
+            <button
+              onClick={handleBroadcastAvailability}
+              id="btn-broadcast-coaches-status"
+              title="Notificar a todos los usuarios qué entrenadores están disponibles y quiénes no"
+              className="px-3.5 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-sky-500/20 transition-all cursor-pointer"
+            >
+              <Bell className="w-3.5 h-3.5" />
+              <span>Activar Notificación de Disponibilidad</span>
+            </button>
+          ) : (
+            <div
+              title="Solo entrenadores y administradores pueden activar notificaciones"
+              className="px-3 py-1.5 rounded-xl bg-black/40 border border-blue-900/60 text-slate-400 text-xs flex items-center gap-1.5"
+            >
+              <Lock className="w-3 h-3 text-slate-500" />
+              <span className="text-[11px]">Notificaciones reservadas a entrenadores y admin</span>
+            </div>
+          )}
+
+          {currentUser?.role === 'admin' && (
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-blue-600/30 transition-all shrink-0 cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Registrar Entrenador</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Filter Tabs & Search Bar */}
@@ -271,18 +391,29 @@ export const CoachesView: React.FC<CoachesViewProps> = ({ coaches, onCoachesChan
                 </div>
               </div>
 
-              {/* Action: Update status */}
-              <div className="mt-5 pt-4 border-t border-blue-950 flex gap-2">
-                <button
-                  onClick={() => {
-                    setSelectedCoach(coach);
-                    setNewStatus(coach.status);
-                    setStatusNotes(coach.statusNotes || '');
-                  }}
-                  className="w-full py-2 rounded-xl bg-blue-950 hover:bg-blue-900 border border-blue-800 text-sky-200 hover:text-white font-semibold text-xs transition-colors text-center"
-                >
-                  Cambiar Estado / Actividad
-                </button>
+              {/* Action: Update status (Only coach themselves or admin) */}
+              <div className="mt-5 pt-4 border-t border-blue-950">
+                {canChangeCoachStatus(coach) ? (
+                  <button
+                    onClick={() => {
+                      setSelectedCoach(coach);
+                      setNewStatus(coach.status);
+                      setStatusNotes(coach.statusNotes || '');
+                    }}
+                    className="w-full py-2 rounded-xl bg-blue-950 hover:bg-blue-900 border border-blue-800 text-sky-200 hover:text-white font-semibold text-xs transition-colors text-center cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <Shield className="w-3.5 h-3.5 text-sky-400" />
+                    <span>Cambiar Estado / Actividad</span>
+                  </button>
+                ) : (
+                  <div
+                    title="Solo el propio entrenador o un Administrador institucional tienen permiso para cambiar este estado"
+                    className="w-full py-2 px-3 rounded-xl bg-black/40 border border-blue-950 text-slate-400 text-xs font-medium flex items-center justify-center gap-1.5 text-center"
+                  >
+                    <Lock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                    <span className="text-[11px] truncate">Solo este entrenador o Admin pueden cambiar su estado</span>
+                  </div>
+                )}
               </div>
             </div>
           );

@@ -9,6 +9,7 @@ export const INITIAL_USERS: User[] = [
     phone: '+57 310 987 6543',
     institutionId: 'DIR-2026-01',
     createdAt: '2026-01-10',
+    password: 'admin'
   },
   {
     id: 'usr-2',
@@ -18,6 +19,7 @@ export const INITIAL_USERS: User[] = [
     phone: '+57 315 444 8899',
     institutionId: 'ENT-2026-04',
     createdAt: '2026-02-01',
+    password: 'coach'
   },
   {
     id: 'usr-3',
@@ -27,6 +29,7 @@ export const INITIAL_USERS: User[] = [
     phone: '+57 320 112 3344',
     institutionId: 'ARB-2026-12',
     createdAt: '2026-02-15',
+    password: 'arbitro'
   },
   {
     id: 'usr-4',
@@ -36,6 +39,7 @@ export const INITIAL_USERS: User[] = [
     phone: '+57 301 223 9988',
     institutionId: 'EST-2026-88',
     createdAt: '2026-03-01',
+    password: 'atleta'
   }
 ];
 

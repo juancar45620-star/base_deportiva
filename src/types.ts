@@ -9,6 +9,7 @@ export interface User {
   phone?: string;
   institutionId?: string;
   createdAt: string;
+  password?: string;
 }
 
 export type CoachStatus = 'disponible' | 'en_clase' | 'incapacitado';
@@ -114,7 +115,7 @@ export interface AppNotification {
   title: string;
   message: string;
   timestamp: string;
-  type: 'match_start' | 'match_end' | 'event_alert' | 'system' | 'coach_status';
+  type: 'match_start' | 'match_end' | 'score_update' | 'event_alert' | 'system' | 'coach_status';
   read: boolean;
   relatedId?: string;
 }

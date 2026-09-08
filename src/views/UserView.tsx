@@ -13,7 +13,9 @@ import {
   KeyRound,
   IdCard,
   Building2,
-  AlertCircle
+  AlertCircle,
+  ArrowLeft,
+  Home
 } from 'lucide-react';
 import { User, UserRole } from '../types';
 import { StorageService } from '../services/storageService';
@@ -23,12 +25,16 @@ interface UserViewProps {
   currentUser: User | null;
   setCurrentUser: (user: User | null) => void;
   initialMode?: 'login' | 'register';
+  onGoBack?: () => void;
+  onGoHome?: () => void;
 }
 
 export const UserView: React.FC<UserViewProps> = ({
   currentUser,
   setCurrentUser,
-  initialMode = 'login'
+  initialMode = 'login',
+  onGoBack,
+  onGoHome
 }) => {
   const [mode, setMode] = useState<'login' | 'register'>(initialMode);
   
@@ -117,6 +123,37 @@ export const UserView: React.FC<UserViewProps> = ({
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-12">
+      {/* Top Breadcrumbs / Return navigation */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          {onGoBack && (
+            <button
+              onClick={onGoBack}
+              className="px-3 py-1.5 rounded-xl bg-[#0B192C] hover:bg-blue-900 border border-blue-900/80 text-sky-200 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 text-sky-400" />
+              <span>Volver a lo anterior</span>
+            </button>
+          )}
+          {onGoHome && (
+            <button
+              onClick={onGoHome}
+              className="px-3 py-1.5 rounded-xl bg-black/40 hover:bg-blue-900 border border-blue-900/80 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow"
+            >
+              <Home className="w-3.5 h-3.5 text-sky-400" />
+              <span>Inicio</span>
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 text-xs">
+          <span className="text-slate-400 hidden sm:inline">Estado de Sesión:</span>
+          <span className="px-2.5 py-1 rounded-full bg-blue-950 border border-blue-800 text-sky-300 font-bold uppercase text-[10px] tracking-wider">
+            {currentUser ? `Autenticado (${currentUser.role})` : 'No autenticado'}
+          </span>
+        </div>
+      </div>
+
       {/* Top Banner */}
       <div className="bg-[#0B192C] border border-blue-900/60 rounded-2xl p-6 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-4">
