@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar, ActiveTab } from './components/Sidebar';
 import { Header } from './components/Header';
+import { LoginScreen } from './components/LoginScreen';
 import { ToastNotification } from './components/ToastNotification';
 import { NotificationModal } from './components/NotificationModal';
 import { HomeView } from './views/HomeView';
@@ -32,6 +33,10 @@ export default function App() {
 
   // Load initial data and subscribe to Firebase Firestore live streams
   useEffect(() => {
+    // Clear legacy auto-assigned user so user starts at the login screen
+    if (!sessionStorage.getItem('sports_app_session_user')) {
+      StorageService.logout();
+    }
     setCurrentUser(StorageService.getCurrentUser());
 
     // Initialize Firebase collections / seed if necessary
@@ -83,8 +88,31 @@ export default function App() {
     }
   };
 
+  const handleLogout = () => {
+    StorageService.logout();
+    sessionStorage.removeItem('sports_app_session_user');
+    setCurrentUser(null);
+  };
+
+  const handleLoginSuccess = (user: User) => {
+    sessionStorage.setItem('sports_app_session_user', 'true');
+    StorageService.setCurrentUser(user);
+    setCurrentUser(user);
+    setActiveTab('inicio');
+  };
+
   const unreadNotificationsCount = notifications.filter(n => !n.read).length;
   const pendingMatchesCount = matches.filter(m => m.status === 'pendiente' || m.status === 'en_vivo').length;
+
+  // If not logged in, show the Login / Register screen directly as requested
+  if (!currentUser) {
+    return (
+      <>
+        <LoginScreen onLogin={handleLoginSuccess} />
+        <ToastNotification onOpenNotifications={() => setIsNotificationsModalOpen(true)} />
+      </>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#070F1E] text-white flex flex-col md:flex-row antialiased selection:bg-sky-500 selection:text-black">
@@ -99,6 +127,7 @@ export default function App() {
         onOpenRegister={() => {
           setActiveTab('usuario');
         }}
+        onLogout={handleLogout}
       />
 
       {/* Main Content Area */}
@@ -113,6 +142,7 @@ export default function App() {
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
           soundEnabled={soundEnabled}
           onToggleSound={handleToggleSound}
+          onLogout={handleLogout}
         />
 
         {/* View Content */}

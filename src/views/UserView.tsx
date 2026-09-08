@@ -111,6 +111,7 @@ export const UserView: React.FC<UserViewProps> = ({
 
   const handleLogout = () => {
     StorageService.logout();
+    sessionStorage.removeItem('sports_app_session_user');
     setCurrentUser(null);
   };
 

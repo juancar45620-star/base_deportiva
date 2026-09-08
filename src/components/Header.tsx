@@ -9,7 +9,8 @@ import {
   ShieldCheck,
   Calendar,
   Clock,
-  Database
+  Database,
+  LogOut
 } from 'lucide-react';
 import { User, AppNotification } from '../types';
 import { ActiveTab } from './Sidebar';
@@ -24,6 +25,7 @@ interface HeaderProps {
   onOpenMobileMenu: () => void;
   soundEnabled: boolean;
   onToggleSound: () => void;
+  onLogout?: () => void;
 }
 
 const TAB_TITLES: Record<ActiveTab, { title: string; subtitle: string; icon: any }> = {
@@ -72,7 +74,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenNotifications,
   onOpenMobileMenu,
   soundEnabled,
-  onToggleSound
+  onToggleSound,
+  onLogout
 }) => {
   const currentTabInfo = TAB_TITLES[activeTab] || TAB_TITLES.inicio;
   const CurrentIcon = currentTabInfo.icon;
@@ -177,6 +180,19 @@ export const Header: React.FC<HeaderProps> = ({
               </p>
             </div>
           </button>
+
+          {/* Direct Logout Button if user is logged in */}
+          {currentUser && onLogout && (
+            <button
+              onClick={onLogout}
+              id="header-logout-btn"
+              title="Cerrar sesión institucional"
+              className="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-rose-950/70 hover:bg-rose-900 text-rose-200 hover:text-white border border-rose-800/60 font-semibold text-xs flex items-center gap-1.5 transition-colors shadow"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span className="hidden md:inline text-[11px]">Salir</span>
+            </button>
+          )}
         </div>
       </div>
     </header>

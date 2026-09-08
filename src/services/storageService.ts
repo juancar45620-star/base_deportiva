@@ -211,23 +211,58 @@ export class StorageService {
     }
   }
 
-  public static getCurrentUser(): User {
-    const raw = localStorage.getItem(KEYS.CURRENT_USER);
-    if (!raw) {
-      const users = this.getUsers();
-      const defaultUser = users[0];
-      localStorage.setItem(KEYS.CURRENT_USER, JSON.stringify(defaultUser));
-      return defaultUser;
+  public static getCurrentUser(): User | null {
+    // Check session storage first (active browser session)
+    const sessionRaw = sessionStorage.getItem(KEYS.CURRENT_USER);
+    if (sessionRaw) {
+      try {
+        return JSON.parse(sessionRaw);
+      } catch {
+        // invalid JSON
+      }
     }
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return this.getUsers()[0];
+    // Do NOT auto-seed default user! User starts unauthenticated.
+    return null;
+  }
+
+  public static setCurrentUser(user: User | null): void {
+    if (user) {
+      sessionStorage.setItem(KEYS.CURRENT_USER, JSON.stringify(user));
+      localStorage.setItem(KEYS.CURRENT_USER, JSON.stringify(user));
+    } else {
+      sessionStorage.removeItem(KEYS.CURRENT_USER);
+      localStorage.removeItem(KEYS.CURRENT_USER);
     }
   }
 
-  public static setCurrentUser(user: User): void {
-    localStorage.setItem(KEYS.CURRENT_USER, JSON.stringify(user));
+  public static login(emailOrName: string, password?: string): { success: boolean; user?: User; error?: string } {
+    const trimmed = emailOrName.trim().toLowerCase();
+    if (!trimmed) {
+      return { success: false, error: 'Por favor ingresa tu usuario o correo institucional.' };
+    }
+
+    const users = this.getUsers();
+    const found = users.find(
+      u => u.email.toLowerCase() === trimmed ||
+           u.name.toLowerCase() === trimmed ||
+           u.name.toLowerCase().includes(trimmed)
+    );
+
+    if (found) {
+      this.setCurrentUser(found);
+      this.addNotification({
+        title: 'Inicio de Sesión Exitoso',
+        message: `Bienvenido(a) al sistema institucional, ${found.name}. Rol: ${found.role.toUpperCase()}.`,
+        type: 'system',
+        read: false
+      });
+      return { success: true, user: found };
+    }
+
+    return {
+      success: false,
+      error: 'Usuario o correo no encontrado en el registro institucional. Puedes crear una cuenta nueva o usar un perfil demo.'
+    };
   }
 
   public static async registerUser(newUser: Omit<User, 'id' | 'createdAt'>): Promise<User> {
@@ -258,6 +293,7 @@ export class StorageService {
   }
 
   public static logout(): void {
+    sessionStorage.removeItem(KEYS.CURRENT_USER);
     localStorage.removeItem(KEYS.CURRENT_USER);
   }
 

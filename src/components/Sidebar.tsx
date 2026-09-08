@@ -34,6 +34,7 @@ interface SidebarProps {
   isOpenMobile: boolean;
   setIsOpenMobile: (open: boolean) => void;
   onOpenRegister?: () => void;
+  onLogout?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -43,7 +44,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   pendingMatchesCount,
   isOpenMobile,
   setIsOpenMobile,
-  onOpenRegister
+  onOpenRegister,
+  onLogout
 }) => {
   const navItems = [
     {
@@ -235,6 +237,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <p className="text-[10px] text-blue-300 capitalize">{currentUser.role}</p>
               </div>
             </div>
+            {onLogout && (
+              <button
+                id="sidebar-logout-btn"
+                onClick={onLogout}
+                title="Cerrar sesión institucional"
+                className="p-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900 text-rose-300 hover:text-white border border-rose-800/40 transition-colors shrink-0"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         )}
       </div>
