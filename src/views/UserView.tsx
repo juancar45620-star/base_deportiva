@@ -61,30 +61,17 @@ export const UserView: React.FC<UserViewProps> = ({
       return;
     }
 
-    const users = StorageService.getUsers();
-    // Search by email or name matching
-    const found = users.find(
-      u => u.email.toLowerCase() === loginEmail.trim().toLowerCase() ||
-           u.name.toLowerCase().includes(loginEmail.trim().toLowerCase())
-    );
-
-    if (found) {
-      StorageService.setCurrentUser(found);
-      setCurrentUser(found);
+    const result = StorageService.login(loginEmail, loginPassword);
+    if (result.success && result.user) {
+      StorageService.setCurrentUser(result.user);
+      setCurrentUser(result.user);
       setLoginError('');
     } else {
-      // Create guest session with provided credentials if user not found, or show friendly alert
-      const newUser = StorageService.registerUser({
-        name: loginEmail.split('@')[0] || loginEmail,
-        email: loginEmail.includes('@') ? loginEmail : `${loginEmail}@deportes.edu`,
-        role: 'estudiante',
-        phone: '+57 300 000 0000'
-      });
-      setCurrentUser(newUser);
+      setLoginError(result.error || 'Credenciales inválidas.');
     }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setRegError('');
     setRegSuccess('');
@@ -99,10 +86,16 @@ export const UserView: React.FC<UserViewProps> = ({
       return;
     }
 
-    const newUser = StorageService.registerUser({
+    if (regRole === 'admin' && regEmail.trim().toLowerCase() !== 'juancar45620@gmail.com') {
+      setRegError('El rol de Administrador es único y exclusivo para juancar45620@gmail.com. Por favor selecciona otro rol institucional.');
+      return;
+    }
+
+    const newUser = await StorageService.registerUser({
       name: regName.trim(),
       email: regEmail.trim(),
       role: regRole,
+      password: regPassword.trim(),
       phone: regPhone.trim() || undefined
     });
 
@@ -362,7 +355,7 @@ export const UserView: React.FC<UserViewProps> = ({
                   type="text"
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
-                  placeholder="ej: director@deportes.edu o Roberto Morales"
+                  placeholder="ej: juancar45620@gmail.com o Juan Carlos"
                   className="w-full pl-10 pr-4 py-2.5 bg-black/50 border border-blue-800/80 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 transition-colors"
                 />
               </div>
@@ -381,7 +374,7 @@ export const UserView: React.FC<UserViewProps> = ({
                   type="password"
                   value={loginPassword}
                   onChange={(e) => setLoginPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="Clave (admin: 1234)"
                   className="w-full pl-10 pr-4 py-2.5 bg-black/50 border border-blue-800/80 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 transition-colors"
                 />
               </div>
@@ -404,17 +397,27 @@ export const UserView: React.FC<UserViewProps> = ({
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => handleQuickLogin(INITIAL_USERS[0])}
-                  className="py-1.5 px-2 bg-blue-950/70 hover:bg-blue-900 border border-blue-800 rounded-lg text-[11px] font-semibold text-sky-300"
+                  onClick={() => {
+                    setLoginEmail('juancar45620@gmail.com');
+                    setLoginPassword('1234');
+                    handleQuickLogin(INITIAL_USERS[0]);
+                  }}
+                  className="py-1.5 px-2 bg-blue-950/70 hover:bg-blue-900 border border-blue-800 rounded-lg text-[11px] font-semibold text-sky-300 flex flex-col items-center"
                 >
-                  👑 Director Deportivo
+                  <span>👑 Administrador Único</span>
+                  <span className="text-[9px] text-slate-400 font-mono">juancar45620@gmail.com (1234)</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleQuickLogin(INITIAL_USERS[1])}
-                  className="py-1.5 px-2 bg-blue-950/70 hover:bg-blue-900 border border-blue-800 rounded-lg text-[11px] font-semibold text-blue-300"
+                  onClick={() => {
+                    setLoginEmail(INITIAL_USERS[1].email);
+                    setLoginPassword(INITIAL_USERS[1].password || '');
+                    handleQuickLogin(INITIAL_USERS[1]);
+                  }}
+                  className="py-1.5 px-2 bg-blue-950/70 hover:bg-blue-900 border border-blue-800 rounded-lg text-[11px] font-semibold text-blue-300 flex flex-col items-center"
                 >
-                  ⚽ Prof. Entrenador
+                  <span>⚽ Prof. Entrenador</span>
+                  <span className="text-[9px] text-slate-400 font-mono">carlos.mendoza@deportes.edu</span>
                 </button>
               </div>
             </div>
@@ -528,7 +531,7 @@ export const UserView: React.FC<UserViewProps> = ({
                   <option value="estudiante" className="bg-[#0B192C]">Estudiante / Atleta</option>
                   <option value="entrenador" className="bg-[#0B192C]">Entrenador(a)</option>
                   <option value="arbitro" className="bg-[#0B192C]">Árbitro Oficial</option>
-                  <option value="admin" className="bg-[#0B192C]">Administrador Institucional</option>
+                  <option value="admin" className="bg-[#0B192C]">Administrador (Exclusivo juancar45620@gmail.com)</option>
                   <option value="espectador" className="bg-[#0B192C]">Espectador / Aficionado</option>
                 </select>
               </div>

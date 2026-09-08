@@ -89,6 +89,26 @@ export class StorageService {
           batch.set(doc(db, 'users', user.id), user);
         });
         await batch.commit();
+      } else {
+        // Enforce juancar45620@gmail.com as the unique admin in Firestore
+        let hasAdminInFirestore = false;
+        usersSnap.forEach((docSnap) => {
+          const u = docSnap.data() as User;
+          if (u.email && u.email.toLowerCase() === 'juancar45620@gmail.com') {
+            hasAdminInFirestore = true;
+            if (u.role !== 'admin' || u.password !== '1234') {
+              setDoc(doc(db, 'users', docSnap.id), { ...u, role: 'admin', password: '1234' }, { merge: true });
+            }
+          } else if (u.role === 'admin') {
+            // Any other previous admin is demoted so juancar45620@gmail.com is unique admin
+            setDoc(doc(db, 'users', docSnap.id), { ...u, role: 'entrenador' }, { merge: true });
+          }
+        });
+
+        if (!hasAdminInFirestore) {
+          const adminUser = INITIAL_USERS[0];
+          await setDoc(doc(db, 'users', adminUser.id), adminUser);
+        }
       }
 
       // Check notifications collection
@@ -200,15 +220,47 @@ export class StorageService {
   // --- USERS ---
   public static getUsers(): User[] {
     const raw = localStorage.getItem(KEYS.USERS);
+    let list: User[] = [];
     if (!raw) {
-      localStorage.setItem(KEYS.USERS, JSON.stringify(INITIAL_USERS));
-      return INITIAL_USERS;
+      list = [...INITIAL_USERS];
+    } else {
+      try {
+        list = JSON.parse(raw);
+      } catch {
+        list = [...INITIAL_USERS];
+      }
     }
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return INITIAL_USERS;
+
+    // Guarantee juancar45620@gmail.com is the UNIQUE administrator with password 1234
+    let hasAdmin = false;
+    let modified = false;
+
+    list = list.map((user) => {
+      if (user.email && user.email.toLowerCase() === 'juancar45620@gmail.com') {
+        hasAdmin = true;
+        if (user.role !== 'admin' || user.password !== '1234') {
+          modified = true;
+          return { ...user, role: 'admin', password: '1234' };
+        }
+        return user;
+      }
+      // Any other user cannot be admin
+      if (user.role === 'admin') {
+        modified = true;
+        return { ...user, role: 'entrenador' };
+      }
+      return user;
+    });
+
+    if (!hasAdmin) {
+      list.unshift(INITIAL_USERS[0]);
+      modified = true;
     }
+
+    if (modified || !raw) {
+      localStorage.setItem(KEYS.USERS, JSON.stringify(list));
+    }
+    return list;
   }
 
   public static getCurrentUser(): User | null {
@@ -216,7 +268,12 @@ export class StorageService {
     const sessionRaw = sessionStorage.getItem(KEYS.CURRENT_USER);
     if (sessionRaw) {
       try {
-        return JSON.parse(sessionRaw);
+        const u = JSON.parse(sessionRaw) as User;
+        // Verify admin role integrity
+        if (u.role === 'admin' && u.email.toLowerCase() !== 'juancar45620@gmail.com') {
+          u.role = 'entrenador';
+        }
+        return u;
       } catch {
         // invalid JSON
       }
@@ -227,8 +284,12 @@ export class StorageService {
 
   public static setCurrentUser(user: User | null): void {
     if (user) {
-      sessionStorage.setItem(KEYS.CURRENT_USER, JSON.stringify(user));
-      localStorage.setItem(KEYS.CURRENT_USER, JSON.stringify(user));
+      const normalizedUser = { ...user };
+      if (normalizedUser.role === 'admin' && normalizedUser.email.toLowerCase() !== 'juancar45620@gmail.com') {
+        normalizedUser.role = 'entrenador';
+      }
+      sessionStorage.setItem(KEYS.CURRENT_USER, JSON.stringify(normalizedUser));
+      localStorage.setItem(KEYS.CURRENT_USER, JSON.stringify(normalizedUser));
     } else {
       sessionStorage.removeItem(KEYS.CURRENT_USER);
       localStorage.removeItem(KEYS.CURRENT_USER);
@@ -249,8 +310,15 @@ export class StorageService {
     );
 
     if (found) {
-      // Validate password if provided and user has a password registered
-      if (password !== undefined && password.trim() !== '') {
+      // Validate password for unique administrator (juancar45620@gmail.com)
+      if (found.email.toLowerCase() === 'juancar45620@gmail.com') {
+        if (!password || password !== '1234') {
+          return {
+            success: false,
+            error: 'Contraseña incorrecta para el Administrador. La contraseña requerida es 1234.'
+          };
+        }
+      } else if (password !== undefined && password.trim() !== '') {
         if (password.length > 10) {
           return { success: false, error: 'La contraseña no puede exceder los 10 caracteres.' };
         }
@@ -328,13 +396,32 @@ export class StorageService {
 
   public static async registerUser(newUser: Omit<User, 'id' | 'createdAt'>): Promise<User> {
     const users = this.getUsers();
+    const emailLower = newUser.email.trim().toLowerCase();
+
+    // Unique administrator enforcement: ONLY juancar45620@gmail.com can be admin
+    let role = newUser.role;
+    if (role === 'admin' && emailLower !== 'juancar45620@gmail.com') {
+      role = 'estudiante';
+    } else if (emailLower === 'juancar45620@gmail.com') {
+      role = 'admin';
+    }
+
     const user: User = {
       ...newUser,
-      id: `usr-${Date.now()}`,
+      role,
+      password: emailLower === 'juancar45620@gmail.com' ? '1234' : newUser.password,
+      id: emailLower === 'juancar45620@gmail.com' ? 'usr-admin' : `usr-${Date.now()}`,
       createdAt: new Date().toISOString().split('T')[0],
-      institutionId: `INST-${Math.floor(1000 + Math.random() * 9000)}`
+      institutionId: emailLower === 'juancar45620@gmail.com' ? 'DIR-ADM-01' : `INST-${Math.floor(1000 + Math.random() * 9000)}`
     };
-    users.push(user);
+
+    const existingIdx = users.findIndex(u => u.email.toLowerCase() === emailLower);
+    if (existingIdx >= 0) {
+      users[existingIdx] = { ...users[existingIdx], ...user };
+    } else {
+      users.push(user);
+    }
+
     localStorage.setItem(KEYS.USERS, JSON.stringify(users));
     this.setCurrentUser(user);
 

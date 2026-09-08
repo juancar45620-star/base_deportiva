@@ -2,14 +2,24 @@ import { Coach, Match, InstitutionalEvent, AppNotification, User } from '../type
 
 export const INITIAL_USERS: User[] = [
   {
+    id: 'usr-admin',
+    name: 'Juan Carlos (Administrador)',
+    email: 'juancar45620@gmail.com',
+    role: 'admin',
+    phone: '+57 300 123 4567',
+    institutionId: 'DIR-ADM-01',
+    createdAt: '2026-01-01',
+    password: '1234'
+  },
+  {
     id: 'usr-1',
     name: 'Lic. Roberto Morales',
     email: 'director@deportes.edu',
-    role: 'admin',
+    role: 'entrenador',
     phone: '+57 310 987 6543',
     institutionId: 'DIR-2026-01',
     createdAt: '2026-01-10',
-    password: 'admin'
+    password: 'coach'
   },
   {
     id: 'usr-2',

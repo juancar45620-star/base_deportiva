@@ -96,6 +96,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       return;
     }
 
+    if (regRole === 'admin' && regEmail.trim().toLowerCase() !== 'juancar45620@gmail.com') {
+      setRegError('El rol de Administrador es único y exclusivo para juancar45620@gmail.com. Por favor selecciona otro rol institucional.');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const newUser = await StorageService.registerUser({
@@ -270,7 +275,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                       type="text"
                       value={emailOrUser}
                       onChange={(e) => setEmailOrUser(e.target.value)}
-                      placeholder="ej: director@deportes.edu o Roberto Morales"
+                      placeholder="ej: juancar45620@gmail.com o Juan Carlos"
                       className="w-full pl-10 pr-4 py-3 bg-black/50 border border-blue-900/80 rounded-xl text-white placeholder-slate-500 text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 transition-colors"
                       required
                     />
@@ -365,17 +370,32 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                       key={usr.id}
                       id={`btn-quick-login-${usr.role}`}
                       type="button"
-                      onClick={() => handleQuickLogin(usr)}
-                      className="p-3 rounded-xl bg-black/40 hover:bg-blue-900/40 border border-blue-950 hover:border-blue-600 text-left transition-all duration-150 flex items-center justify-between group"
+                      onClick={() => {
+                        setEmailOrUser(usr.email);
+                        setPassword(usr.password || '');
+                        handleQuickLogin(usr);
+                      }}
+                      className={`p-3 rounded-xl bg-black/40 hover:bg-blue-900/40 border text-left transition-all duration-150 flex items-center justify-between group ${
+                        usr.role === 'admin' ? 'border-sky-500/50 hover:border-sky-400 shadow-sm shadow-sky-500/20' : 'border-blue-950 hover:border-blue-600'
+                      }`}
                     >
                       <div className="min-w-0 pr-2">
-                        <p className="text-xs font-bold text-white truncate group-hover:text-sky-300">
-                          {usr.name}
-                        </p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-xs font-bold text-white truncate group-hover:text-sky-300">
+                            {usr.name}
+                          </p>
+                          {usr.role === 'admin' && (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-sky-400 text-black uppercase">
+                              Único Admin
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[11px] text-blue-300 capitalize flex items-center gap-1 mt-0.5">
                           <span>{usr.role}</span>
                           <span className="text-slate-500">•</span>
-                          <span className="text-slate-400 text-[10px]">{usr.institutionId}</span>
+                          <span className="text-slate-400 text-[10px]">
+                            {usr.role === 'admin' ? `${usr.email} (1234)` : usr.institutionId}
+                          </span>
                         </p>
                       </div>
                       <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-sky-400 group-hover:translate-x-0.5 transition-all shrink-0" />
@@ -461,7 +481,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                     <option value="estudiante" className="bg-[#0B192C]">Estudiante / Atleta</option>
                     <option value="entrenador" className="bg-[#0B192C]">Entrenador / Técnico</option>
                     <option value="arbitro" className="bg-[#0B192C]">Árbitro Oficial</option>
-                    <option value="admin" className="bg-[#0B192C]">Administrador / Director</option>
+                    <option value="admin" className="bg-[#0B192C]">Administrador (Exclusivo juancar45620@gmail.com)</option>
                     <option value="espectador" className="bg-[#0B192C]">Espectador / Aficionado</option>
                   </select>
                 </div>
@@ -595,7 +615,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                     type="text"
                     value={recoverEmail}
                     onChange={(e) => setRecoverEmail(e.target.value)}
-                    placeholder="ej: director@deportes.edu o Roberto Morales"
+                    placeholder="ej: juancar45620@gmail.com o Juan Carlos"
                     className="w-full pl-9 pr-3 py-2.5 bg-black/40 border border-blue-900/80 rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-sky-400"
                     required
                   />
