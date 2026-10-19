@@ -173,14 +173,22 @@ export const EventsView: React.FC<EventsViewProps> = ({
       )}
 
       {/* Header with action */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#0B192C] border border-blue-900/60 p-5 rounded-2xl text-white shadow-xl">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#0B192C] border-2 border-blue-800/80 p-5 rounded-2xl text-white shadow-xl">
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 mb-1.5">
+            <span className="text-[11px] font-bold text-sky-300 uppercase bg-blue-950 px-2.5 py-0.5 rounded-full border border-blue-800">
+              I.E. TÉCNICA PEREZ Y ALDANA
+            </span>
+            <span className="text-[10px] text-amber-300 font-bold bg-amber-950 px-2 py-0.5 rounded-full border border-amber-800">
+              Purificación - Tolima
+            </span>
+          </div>
+          <h2 className="text-xl font-black text-white flex items-center gap-2">
             <CalendarDays className="w-5 h-5 text-sky-400" />
             Cronología de Eventos Institucionales
           </h2>
           <p className="text-xs text-blue-200 mt-0.5">
-            Organización por fechas y horas exactas. Solo entrenadores y administradores activan notificaciones a los usuarios.
+            Organización cronológica por fechas y horas exactas en los escenarios deportivos de Purificación.
           </p>
         </div>
 

@@ -404,20 +404,20 @@ export const UserView: React.FC<UserViewProps> = ({
                   }}
                   className="py-1.5 px-2 bg-blue-950/70 hover:bg-blue-900 border border-blue-800 rounded-lg text-[11px] font-semibold text-sky-300 flex flex-col items-center"
                 >
-                  <span>👑 Administrador Único</span>
+                  <span>👑 Admin: Esteban Argüello</span>
                   <span className="text-[9px] text-slate-400 font-mono">juancar45620@gmail.com (1234)</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => {
                     setLoginEmail(INITIAL_USERS[1].email);
-                    setLoginPassword(INITIAL_USERS[1].password || '');
+                    setLoginPassword(INITIAL_USERS[1].password || 'coach');
                     handleQuickLogin(INITIAL_USERS[1]);
                   }}
                   className="py-1.5 px-2 bg-blue-950/70 hover:bg-blue-900 border border-blue-800 rounded-lg text-[11px] font-semibold text-blue-300 flex flex-col items-center"
                 >
-                  <span>⚽ Prof. Entrenador</span>
-                  <span className="text-[9px] text-slate-400 font-mono">carlos.mendoza@deportes.edu</span>
+                  <span>⚽ Entrenador: DIEGO GÓMEZ</span>
+                  <span className="text-[9px] text-slate-400 font-mono">diego.gomez@perezyaldana.edu.co</span>
                 </button>
               </div>
             </div>

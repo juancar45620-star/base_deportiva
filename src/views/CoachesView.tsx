@@ -210,14 +210,22 @@ export const CoachesView: React.FC<CoachesViewProps> = ({
       )}
 
       {/* Header with Search, Notification Broadcaster, and Add Coach */}
-      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 bg-[#0B192C] border border-blue-900/60 p-5 rounded-2xl text-white shadow-xl">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 bg-[#0B192C] border-2 border-blue-800/80 p-5 rounded-2xl text-white shadow-xl">
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 mb-1.5">
+            <span className="text-[11px] font-bold text-sky-300 uppercase tracking-wide bg-blue-950 px-2.5 py-0.5 rounded-full border border-blue-800">
+              INSTITUCIÓN EDUCATIVA TÉCNICA PEREZ Y ALDANA
+            </span>
+            <span className="text-[10px] text-amber-300 font-bold bg-amber-950/80 px-2 py-0.5 rounded-full border border-amber-800/60">
+              Purificación - Tolima
+            </span>
+          </div>
+          <h2 className="text-xl font-black text-white flex items-center gap-2">
             <Users className="w-5 h-5 text-sky-400" />
-            Directorio y Estado de Entrenadores
+            Cuerpo Técnico Oficial: DIEGO GÓMEZ & JORGE DUARTE
           </h2>
           <p className="text-xs text-blue-200 mt-0.5">
-            Supervisa disponibilidad, sesiones en curso e incapacidades médicas. Solo el entrenador o el administrador pueden alterar el estado.
+            Docentes directores técnicos autorizados para fútbol, microfútbol, baloncesto, voleibol, balonmano, atletismo, tenis de mesa y natación.
           </p>
         </div>
 

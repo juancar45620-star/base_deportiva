@@ -115,20 +115,28 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
       </div>
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#0B192C] border border-blue-900/60 p-5 rounded-2xl text-white shadow-xl">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#0B192C] border-2 border-blue-800/80 p-5 rounded-2xl text-white shadow-xl">
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 mb-1.5">
+            <span className="text-[11px] font-bold text-sky-300 uppercase bg-blue-950 px-2.5 py-0.5 rounded-full border border-blue-800">
+              I.E. TÉCNICA PEREZ Y ALDANA
+            </span>
+            <span className="text-[10px] text-amber-300 font-bold bg-amber-950 px-2 py-0.5 rounded-full border border-amber-800">
+              Purificación - Tolima
+            </span>
+          </div>
+          <h2 className="text-xl font-black text-white flex items-center gap-2">
             <FileCheck2 className="w-5 h-5 text-sky-400" />
             Historial de Resultados y Actas Arbitrales
           </h2>
           <p className="text-xs text-blue-200 mt-0.5">
-            Registro exhaustivo: horas de inicio y fin, fecha exacta, cuerpo arbitral, números de jugadores e infracciones
+            Registro oficial: horas de inicio y fin, jueces colegiados, alineaciones e infracciones disciplinarias.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <span className="px-3 py-1.5 rounded-xl bg-emerald-950 text-emerald-300 border border-emerald-800 text-xs font-bold">
-            {playedMatches.length} Partidos Oficiales Jugados
+            {playedMatches.length} Actas Consolidadas
           </span>
         </div>
       </div>

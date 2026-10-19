@@ -36,17 +36,22 @@ interface HeaderProps {
 const TAB_TITLES: Record<ActiveTab, { title: string; subtitle: string; icon: any }> = {
   inicio: {
     title: 'Panel General de Deportes',
-    subtitle: 'Resumen operativo, eventos institucionales y partidos en curso',
+    subtitle: 'INSTITUCIÓN EDUCATIVA TÉCNICA PEREZ Y ALDANA • Purificación - Tolima',
+    icon: Trophy
+  },
+  en_vivo: {
+    title: 'Partidos En Vivo & Tiempo Real',
+    subtitle: 'Transmisión interactiva de marcadores, tiempos y escenarios • Purificación, Tolima',
     icon: Trophy
   },
   usuario: {
     title: 'Gestión de Usuario y Autenticación',
-    subtitle: 'Inicio de sesión, registro de nuevas cuentas y roles del sistema',
+    subtitle: 'Inicio de sesión, registro y credenciales institucionales',
     icon: UserIcon
   },
   entrenadores: {
-    title: 'Cuerpo Técnico y Entrenadores',
-    subtitle: 'Disponibilidad, clases activas e incapacidades médicas',
+    title: 'Cuerpo Técnico Oficial',
+    subtitle: 'DIEGO GÓMEZ & JORGE DUARTE • I.E. Técnica Perez y Aldana',
     icon: ShieldCheck
   },
   partidos: {
@@ -56,7 +61,7 @@ const TAB_TITLES: Record<ActiveTab, { title: string; subtitle: string; icon: any
   },
   eventos: {
     title: 'Calendario de Eventos Institucionales',
-    subtitle: 'Organización cronológica por fechas y horas de la institución',
+    subtitle: 'Organización cronológica por fechas y horas en Purificación',
     icon: Calendar
   },
   resultados: {

@@ -19,6 +19,7 @@ import { User } from '../types';
 
 export type ActiveTab =
   | 'inicio'
+  | 'en_vivo'
   | 'usuario'
   | 'entrenadores'
   | 'partidos'
@@ -31,6 +32,7 @@ interface SidebarProps {
   setActiveTab: (tab: ActiveTab) => void;
   currentUser: User | null;
   pendingMatchesCount: number;
+  liveMatchesCount?: number;
   isOpenMobile: boolean;
   setIsOpenMobile: (open: boolean) => void;
   onOpenRegister?: () => void;
@@ -42,6 +44,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   setActiveTab,
   currentUser,
   pendingMatchesCount,
+  liveMatchesCount = 0,
   isOpenMobile,
   setIsOpenMobile,
   onOpenRegister,
@@ -55,17 +58,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       description: 'Panel general institucional'
     },
     {
-      id: 'usuario' as ActiveTab,
-      label: 'Usuario',
-      icon: UserIcon,
-      description: 'Iniciar sesión y cuenta',
-      badge: currentUser ? currentUser.role : 'Invitado'
-    },
-    {
-      id: 'entrenadores' as ActiveTab,
-      label: 'Entrenadores',
-      icon: Users,
-      description: 'Disponibles, clases e incapacidades'
+      id: 'en_vivo' as ActiveTab,
+      label: 'Partidos En Vivo',
+      icon: Trophy,
+      description: 'Marcador en tiempo real',
+      counter: liveMatchesCount > 0 ? liveMatchesCount : undefined,
+      isLiveTag: true
     },
     {
       id: 'partidos' as ActiveTab,
@@ -74,10 +72,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       description: 'Historial y programación'
     },
     {
-      id: 'eventos' as ActiveTab,
-      label: 'Eventos',
-      icon: CalendarDays,
-      description: 'Cronología y agenda institucional'
+      id: 'partidos_pendientes' as ActiveTab,
+      label: 'Partidos Pendientes',
+      icon: Clock,
+      description: 'Próximos juegos y alertas',
+      counter: pendingMatchesCount > 0 ? pendingMatchesCount : undefined
     },
     {
       id: 'resultados' as ActiveTab,
@@ -86,11 +85,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
       description: 'Actas arbitrales e infracciones'
     },
     {
-      id: 'partidos_pendientes' as ActiveTab,
-      label: 'Partidos Pendientes',
-      icon: Clock,
-      description: 'Próximos juegos y alertas en vivo',
-      counter: pendingMatchesCount > 0 ? pendingMatchesCount : undefined
+      id: 'entrenadores' as ActiveTab,
+      label: 'Entrenadores',
+      icon: Users,
+      description: 'Diego Gómez & Jorge Duarte'
+    },
+    {
+      id: 'eventos' as ActiveTab,
+      label: 'Eventos',
+      icon: CalendarDays,
+      description: 'Cronología y agenda'
+    },
+    {
+      id: 'usuario' as ActiveTab,
+      label: 'Usuario',
+      icon: UserIcon,
+      description: 'Iniciar sesión y cuenta',
+      badge: currentUser ? currentUser.role : 'Invitado'
     }
   ];
 
@@ -101,20 +112,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const sidebarContent = (
     <div className="flex flex-col h-full bg-[#0B192C] text-white select-none border-r border-blue-950/80 shadow-2xl">
-      {/* Brand Header */}
-      <div className="p-5 border-b border-blue-900/60 bg-gradient-to-b from-[#071322] to-[#0B192C]">
+      {/* Brand Header: I.E. TÉCNICA PEREZ Y ALDANA */}
+      <div className="p-4 sm:p-5 border-b border-blue-900/60 bg-gradient-to-b from-[#071322] to-[#0B192C]">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-700 to-sky-400 p-0.5 shadow-lg shadow-blue-600/30 flex items-center justify-center">
-              <div className="w-full h-full bg-black/40 rounded-[10px] flex items-center justify-center">
-                <Trophy className="w-5 h-5 text-white" />
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-700 via-sky-500 to-amber-400 p-0.5 shadow-lg shadow-blue-600/30 flex items-center justify-center shrink-0">
+              <div className="w-full h-full bg-black/50 rounded-[10px] flex items-center justify-center font-black text-sky-300 text-xs">
+                IET
               </div>
             </div>
-            <div>
-              <h1 className="font-extrabold text-base tracking-tight text-white flex items-center gap-1.5">
-                DEPORTE<span className="text-sky-400">SYS</span>
+            <div className="min-w-0">
+              <h1 className="font-black text-xs leading-tight tracking-tight text-white uppercase truncate">
+                I.E. TÉCNICA PEREZ Y ALDANA
               </h1>
-              <p className="text-[11px] text-blue-200/80 font-medium">Gestión de Eventos Deportivos</p>
+              <p className="text-[10px] text-amber-300 font-bold truncate">Purificación - Tolima</p>
+              <p className="text-[9px] text-blue-200/70 font-medium truncate">Sistema Deportivo & Partidos En Vivo</p>
             </div>
           </div>
           <button
@@ -161,7 +173,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <span className="truncate">{item.label}</span>
-                    {item.counter !== undefined && (
+                    {item.id === 'en_vivo' && (
+                      <span className="px-2 py-0.5 text-[9px] font-extrabold uppercase rounded-full bg-rose-600 text-white shadow-sm shadow-rose-600/50 flex items-center gap-1 animate-pulse">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
+                        <span>VIVO</span>
+                      </span>
+                    )}
+                    {item.id !== 'en_vivo' && item.counter !== undefined && (
                       <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-500 text-black shadow-sm animate-pulse">
                         {item.counter}
                       </span>

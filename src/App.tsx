@@ -16,6 +16,7 @@ import { MatchesView } from './views/MatchesView';
 import { EventsView } from './views/EventsView';
 import { ResultsView } from './views/ResultsView';
 import { PendingMatchesView } from './views/PendingMatchesView';
+import { LiveMatchesView } from './views/LiveMatchesView';
 import { StorageService } from './services/storageService';
 import { audioNotification } from './services/audioNotification';
 import { User, Coach, Match, InstitutionalEvent, AppNotification } from './types';
@@ -146,6 +147,7 @@ export default function App() {
         setActiveTab={handleNavigate}
         currentUser={currentUser}
         pendingMatchesCount={pendingMatchesCount}
+        liveMatchesCount={matches.filter(m => m.status === 'en_vivo').length}
         isOpenMobile={isMobileMenuOpen}
         setIsOpenMobile={setIsMobileMenuOpen}
         onOpenRegister={() => {
@@ -179,6 +181,16 @@ export default function App() {
               currentUser={currentUser}
               setActiveTab={handleNavigate}
               onStartMatch={handleStartMatch}
+            />
+          )}
+
+          {activeTab === 'en_vivo' && (
+            <LiveMatchesView
+              matches={matches}
+              onMatchesChange={setMatches}
+              currentUser={currentUser}
+              onGoBack={handleGoBack}
+              onGoHome={handleGoHome}
             />
           )}
 

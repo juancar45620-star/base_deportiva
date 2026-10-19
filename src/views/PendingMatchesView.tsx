@@ -192,23 +192,40 @@ export const PendingMatchesView: React.FC<PendingMatchesViewProps> = ({
       )}
 
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#0B192C] border border-blue-900/60 p-5 rounded-2xl text-white shadow-xl">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#0B192C] border-2 border-blue-800/80 p-5 rounded-2xl text-white shadow-xl">
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 mb-1.5">
+            <span className="text-[11px] font-bold text-sky-300 uppercase bg-blue-950 px-2 py-0.5 rounded-full border border-blue-800">
+              I.E. TÉCNICA PEREZ Y ALDANA
+            </span>
+            <span className="text-[10px] text-amber-300 font-bold bg-amber-950 px-2 py-0.5 rounded-full border border-amber-800">
+              Purificación - Tolima
+            </span>
+          </div>
+          <h2 className="text-xl font-black text-white flex items-center gap-2">
             <Clock className="w-5 h-5 text-sky-400" />
             Partidos Pendientes y Transmisión en Vivo
           </h2>
           <p className="text-xs text-blue-200 mt-0.5">
-            Seguimiento de encuentros por jugar y control en tiempo real del marcador en vivo. Solo entrenadores y administradores activan notificaciones.
+            Seguimiento de encuentros por jugar y control en tiempo real del marcador en vivo.
           </p>
         </div>
 
-        <button
-          onClick={() => setActiveTab('partidos')}
-          className="px-4 py-2 rounded-xl bg-blue-950 hover:bg-blue-900 border border-blue-800 text-sky-300 font-semibold text-xs transition-colors shrink-0 cursor-pointer"
-        >
-          Ver Programación General
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => setActiveTab('en_vivo')}
+            className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-lg shadow-rose-600/30 transition-all cursor-pointer"
+          >
+            <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
+            <span>Panel en Vivo</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('partidos')}
+            className="px-3.5 py-2 rounded-xl bg-blue-950 hover:bg-blue-900 border border-blue-800 text-sky-300 font-semibold text-xs transition-colors cursor-pointer"
+          >
+            Programación
+          </button>
+        </div>
       </div>
 
       {/* Search */}

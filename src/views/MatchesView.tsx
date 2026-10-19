@@ -50,14 +50,14 @@ export const MatchesView: React.FC<MatchesViewProps> = ({
 
   // Modal for adding new match
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [sport, setSport] = useState('Fútbol 11');
-  const [category, setCategory] = useState('Torneo Interfacultades');
-  const [tournament, setTournament] = useState('Copa Institucional 2026');
+  const [sport, setSport] = useState('Fútbol');
+  const [category, setCategory] = useState('Juegos Interclases 2026');
+  const [tournament, setTournament] = useState('Torneo Institucional Perez y Aldana');
   const [teamHomeName, setTeamHomeName] = useState('');
   const [teamAwayName, setTeamAwayName] = useState('');
   const [matchDate, setMatchDate] = useState('');
-  const [matchTime, setMatchTime] = useState('15:00');
-  const [venue, setVenue] = useState('Cancha Principal N° 1');
+  const [matchTime, setMatchTime] = useState('14:30');
+  const [venue, setVenue] = useState('Cancha Principal de Fútbol I.E. Perez y Aldana');
 
   const sportsList = Array.from(new Set(matches.map(m => m.sport)));
 
@@ -173,24 +173,34 @@ export const MatchesView: React.FC<MatchesViewProps> = ({
           </p>
         </div>
 
-        {canScheduleMatches ? (
+        <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={() => setIsAddOpen(true)}
-            id="btn-schedule-match"
-            className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-blue-600/30 transition-all shrink-0 cursor-pointer"
+            onClick={() => setActiveTab('en_vivo')}
+            className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs flex items-center gap-2 shadow-lg shadow-rose-600/30 transition-all cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
-            Programar Nuevo Partido
+            <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
+            <span>Ver Partidos En Vivo ({liveCount})</span>
           </button>
-        ) : (
-          <div
-            title="Solo entrenadores y administradores pueden programar partidos"
-            className="px-3 py-2 rounded-xl bg-black/40 border border-blue-900/60 text-slate-400 text-xs flex items-center gap-1.5"
-          >
-            <Lock className="w-3.5 h-3.5 text-slate-500" />
-            <span className="text-[11px]">Programación reservada a entrenadores y admin</span>
-          </div>
-        )}
+
+          {canScheduleMatches ? (
+            <button
+              onClick={() => setIsAddOpen(true)}
+              id="btn-schedule-match"
+              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-blue-600/30 transition-all shrink-0 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Programar Partido
+            </button>
+          ) : (
+            <div
+              title="Solo entrenadores y administradores pueden programar partidos"
+              className="px-3 py-2 rounded-xl bg-black/40 border border-blue-900/60 text-slate-400 text-xs flex items-center gap-1.5"
+            >
+              <Lock className="w-3.5 h-3.5 text-slate-500" />
+              <span className="text-[11px]">Programación reservada a entrenadores y admin</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Filter Tabs & Search */}
@@ -470,12 +480,14 @@ export const MatchesView: React.FC<MatchesViewProps> = ({
                     onChange={(e) => setSport(e.target.value)}
                     className="w-full p-2.5 bg-black/50 border border-blue-900 rounded-xl text-white text-xs focus:outline-none focus:border-sky-400"
                   >
-                    <option value="Fútbol 11">Fútbol 11</option>
-                    <option value="Baloncesto">Baloncesto</option>
-                    <option value="Voleibol">Voleibol</option>
-                    <option value="Fútsal Masculino">Fútsal Masculino</option>
-                    <option value="Fútsal Femenino">Fútsal Femenino</option>
-                    <option value="Tenis de Mesa">Tenis de Mesa</option>
+                    <option value="Fútbol">⚽ Fútbol</option>
+                    <option value="Voleibol">🏐 Voleibol</option>
+                    <option value="Baloncesto">🏀 Baloncesto</option>
+                    <option value="Microfútbol / Fútbol de Salón">⚽ Microfútbol / Fútbol de Salón</option>
+                    <option value="Balonmano">🤾 Balonmano</option>
+                    <option value="Atletismo">🏃 Atletismo</option>
+                    <option value="Tenis de Mesa">🏓 Tenis de Mesa</option>
+                    <option value="Natación">🏊 Natación</option>
                   </select>
                 </div>
 

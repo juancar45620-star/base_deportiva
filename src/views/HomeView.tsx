@@ -49,26 +49,41 @@ export const HomeView: React.FC<HomeViewProps> = ({
   return (
     <div className="space-y-6 pb-12">
       {/* Welcome Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#0B192C] via-[#1E3E62] to-[#0B192C] border border-blue-800/60 p-6 sm:p-8 text-white shadow-xl">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#0B192C] via-[#1E3E62] to-[#0B192C] border-2 border-blue-800/80 p-6 sm:p-8 text-white shadow-2xl">
         <div className="relative z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-sky-300 text-xs font-semibold mb-3">
-            <Shield className="w-3.5 h-3.5" />
-            Sistema Oficial de Gestión Deportiva
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/40 text-sky-300 text-xs font-bold">
+              <Shield className="w-3.5 h-3.5" />
+              INSTITUCIÓN EDUCATIVA TÉCNICA PEREZ Y ALDANA
+            </span>
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-xs font-semibold">
+              <MapPin className="w-3 h-3" />
+              Purificación - Tolima
+            </span>
           </div>
+
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">
-            Bienvenido, {currentUser ? currentUser.name : 'Usuario Institucional'}
+            Bienvenido, {currentUser ? currentUser.name : 'Comunidad Educativa'}
           </h1>
           <p className="text-sm sm:text-base text-blue-100/90 mt-2 leading-relaxed">
-            Plataforma centralizada para el control de eventos deportivos, entrenadores, seguimiento de partidos en vivo, resultados y actas arbitrales.
+            Portal oficial de los Juegos Interclases y Torneos Institucionales. Seguimiento de partidos en vivo, marcadores en tiempo real, actas arbitrales y cuerpo técnico oficial.
           </p>
 
           <div className="flex flex-wrap gap-3 mt-5">
+            <button
+              onClick={() => setActiveTab('en_vivo')}
+              id="home-btn-live-matches"
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-black text-xs sm:text-sm shadow-lg shadow-rose-600/30 flex items-center gap-2 transition-all cursor-pointer"
+            >
+              <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping"></span>
+              <span>Partidos En Vivo ({liveMatches.length})</span>
+            </button>
             <button
               onClick={() => setActiveTab('partidos_pendientes')}
               className="px-4 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs sm:text-sm shadow-lg shadow-sky-500/25 flex items-center gap-2 transition-all"
             >
               <Clock className="w-4 h-4" />
-              Ver Partidos Pendientes ({pendingMatches.length})
+              Próximos Encuentros ({pendingMatches.length})
             </button>
             <button
               onClick={() => setActiveTab('resultados')}
@@ -175,10 +190,10 @@ export const HomeView: React.FC<HomeViewProps> = ({
               </h3>
             </div>
             <button
-              onClick={() => setActiveTab('partidos')}
-              className="text-xs text-rose-200 hover:text-white font-medium flex items-center gap-1 underline underline-offset-4"
+              onClick={() => setActiveTab('en_vivo')}
+              className="text-xs text-rose-200 hover:text-white font-bold flex items-center gap-1 underline underline-offset-4 cursor-pointer"
             >
-              Ver todos
+              Ver Panel en Vivo ({liveMatches.length}) →
             </button>
           </div>
 
@@ -190,7 +205,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               >
                 <div className="flex items-center justify-between text-xs text-slate-300 mb-2">
                   <span className="font-semibold text-rose-400">{match.sport} • {match.tournament}</span>
-                  <span>Inició: {match.startTime || match.time}</span>
+                  <span className="font-mono text-amber-300">{match.currentPeriod || 'En juego'}</span>
                 </div>
 
                 <div className="flex items-center justify-between py-2">
@@ -206,15 +221,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 </div>
 
                 <div className="flex items-center justify-between text-[11px] text-slate-400 mt-2 pt-2 border-t border-rose-950">
-                  <span className="flex items-center gap-1">
-                    <MapPin className="w-3 h-3 text-rose-400" />
-                    {match.venue}
+                  <span className="flex items-center gap-1 truncate max-w-[200px]">
+                    <MapPin className="w-3 h-3 text-rose-400 shrink-0" />
+                    <span className="truncate">{match.venue}</span>
                   </span>
                   <button
-                    onClick={() => setActiveTab('partidos_pendientes')}
-                    className="text-sky-300 hover:text-white font-semibold"
+                    onClick={() => setActiveTab('en_vivo')}
+                    className="text-sky-300 hover:text-white font-semibold flex items-center gap-1 cursor-pointer"
                   >
-                    Controlar partido
+                    <span>Seguir en vivo</span>
+                    <ArrowRight className="w-3 h-3" />
                   </button>
                 </div>
               </div>

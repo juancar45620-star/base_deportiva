@@ -184,28 +184,28 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       <div className="relative z-10 w-full max-w-2xl mx-auto space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-3">
-          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-2xl bg-[#0B192C] border border-blue-900/60 shadow-xl">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-700 to-sky-400 p-0.5 shadow-md flex items-center justify-center">
-              <div className="w-full h-full bg-black/40 rounded-[10px] flex items-center justify-center">
-                <Trophy className="w-5 h-5 text-white" />
+          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-2xl bg-[#0B192C] border-2 border-sky-400/60 shadow-xl">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-blue-700 via-sky-500 to-amber-400 p-0.5 shadow-md flex items-center justify-center shrink-0">
+              <div className="w-full h-full bg-black/50 rounded-[10px] flex items-center justify-center font-black text-sky-300 text-sm">
+                IET
               </div>
             </div>
             <div className="text-left">
-              <span className="text-sm font-extrabold tracking-tight text-white flex items-center gap-1">
-                DEPORTE<span className="text-sky-400">SYS</span>
+              <span className="text-xs sm:text-sm font-black tracking-tight text-white block uppercase">
+                INSTITUCIÓN EDUCATIVA TÉCNICA PEREZ Y ALDANA
               </span>
-              <span className="text-[10px] text-blue-200 block leading-none">
-                Gestor Deportivo Institucional
+              <span className="text-[11px] text-amber-300 font-bold block leading-tight">
+                Purificación - Tolima
               </span>
             </div>
           </div>
 
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Portal de Acceso Institucional
+              Portal Deportivo Institucional
             </h1>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto mt-1">
-              Ingresa con tus credenciales institucionales para gestionar partidos, eventos y actas en tiempo real.
+            <p className="text-xs sm:text-sm text-blue-200 max-w-md mx-auto mt-1">
+              Juegos Interclases, control de entrenadores y seguimiento de partidos en vivo en tiempo real.
             </p>
           </div>
         </div>

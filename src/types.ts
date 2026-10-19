@@ -86,6 +86,10 @@ export interface Match {
   status: MatchStatus;
   scoreHome?: number;
   scoreAway?: number;
+  currentPeriod?: string; // e.g. '1T (Primer Tiempo)', 'Set 2', '3er Cuarto'
+  elapsedMinutes?: number; // minutos transcurridos
+  periodScores?: string; // e.g. sets o cuartos
+  liveStatusText?: string; // 'En juego', 'Entretiempo', 'Calentamiento'
   startTime?: string; // Hora exacta de inicio (ej: 10:05 AM)
   endTime?: string;   // Hora exacta de finalización (ej: 11:52 AM)
   referees: MatchReferee[];

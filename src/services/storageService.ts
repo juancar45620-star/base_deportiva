@@ -47,7 +47,7 @@ export class StorageService {
     this.isInitialized = true;
 
     try {
-      // Check coaches collection
+      // Check coaches collection - enforce ONLY DIEGO GÓMEZ and JORGE DUARTE
       const coachesSnap = await getDocs(collection(db, 'coaches'));
       if (coachesSnap.empty) {
         console.log('Seeding initial coaches to Firestore...');
@@ -56,6 +56,25 @@ export class StorageService {
           batch.set(doc(db, 'coaches', coach.id), coach);
         });
         await batch.commit();
+      } else {
+        // Remove any coaches that are not Diego Gomez or Jorge Duarte
+        for (const docSnap of coachesSnap.docs) {
+          const c = docSnap.data() as Coach;
+          const nameUp = (c.name || '').toUpperCase();
+          const isDiego = nameUp.includes('DIEGO') && nameUp.includes('G');
+          const isJorge = nameUp.includes('JORGE') && nameUp.includes('DUARTE');
+          if (!isDiego && !isJorge) {
+            try {
+              await deleteDoc(doc(db, 'coaches', docSnap.id));
+            } catch (err) {
+              console.warn('Error deleting legacy coach:', err);
+            }
+          }
+        }
+        // Ensure the two authorized coaches exist with correct names and institution data
+        for (const coach of INITIAL_COACHES) {
+          await setDoc(doc(db, 'coaches', coach.id), coach, { merge: true });
+        }
       }
 
       // Check matches collection
@@ -133,12 +152,20 @@ export class StorageService {
       return onSnapshot(q, (snapshot) => {
         if (!snapshot.empty) {
           const list: Coach[] = [];
-          snapshot.forEach(docSnap => list.push(docSnap.data() as Coach));
-          localStorage.setItem(KEYS.COACHES, JSON.stringify(list));
-          callback(list);
-        } else {
-          callback(this.getCoaches());
+          snapshot.forEach(docSnap => {
+            const c = docSnap.data() as Coach;
+            const nameUp = (c.name || '').toUpperCase();
+            if ((nameUp.includes('DIEGO') && nameUp.includes('G')) || (nameUp.includes('JORGE') && nameUp.includes('DUARTE'))) {
+              list.push(c);
+            }
+          });
+          if (list.length > 0) {
+            localStorage.setItem(KEYS.COACHES, JSON.stringify(list));
+            callback(list);
+            return;
+          }
         }
+        callback(this.getCoaches());
       }, (error) => {
         console.warn('Firestore coaches listener error:', error);
         callback(this.getCoaches());
@@ -454,15 +481,29 @@ export class StorageService {
   // --- COACHES ---
   public static getCoaches(): Coach[] {
     const raw = localStorage.getItem(KEYS.COACHES);
-    if (!raw) {
+    let list: Coach[] = [];
+    if (raw) {
+      try {
+        list = JSON.parse(raw);
+      } catch {
+        list = [];
+      }
+    } else {
+      list = INITIAL_COACHES;
+    }
+
+    // Filter strictly to Diego Gómez and Jorge Duarte
+    const filtered = list.filter(c => {
+      const n = (c.name || '').toUpperCase();
+      return (n.includes('DIEGO') && n.includes('G')) || (n.includes('JORGE') && n.includes('DUARTE'));
+    });
+
+    if (filtered.length !== 2) {
       localStorage.setItem(KEYS.COACHES, JSON.stringify(INITIAL_COACHES));
       return INITIAL_COACHES;
     }
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return INITIAL_COACHES;
-    }
+
+    return filtered;
   }
 
   public static async updateCoachStatus(coachId: string, status: CoachStatus, notes?: string): Promise<Coach[]> {
@@ -560,7 +601,17 @@ export class StorageService {
       return INITIAL_MATCHES;
     }
     try {
-      return JSON.parse(raw);
+      const parsed: Match[] = JSON.parse(raw);
+      const hasPerezMatch = parsed.some(m =>
+        (m.tournament || '').includes('Perez y Aldana') ||
+        (m.venue || '').includes('Perez y Aldana') ||
+        (m.sport || '').includes('Microfútbol')
+      );
+      if (!hasPerezMatch) {
+        localStorage.setItem(KEYS.MATCHES, JSON.stringify(INITIAL_MATCHES));
+        return INITIAL_MATCHES;
+      }
+      return parsed;
     } catch {
       return INITIAL_MATCHES;
     }
@@ -724,6 +775,163 @@ export class StorageService {
         relatedId: matchId
       });
     }
+    return updatedMatch;
+  }
+
+  public static async updateLiveMatchDetails(
+    matchId: string,
+    updates: {
+      scoreHome?: number;
+      scoreAway?: number;
+      currentPeriod?: string;
+      elapsedMinutes?: number;
+      periodScores?: string;
+      liveStatusText?: string;
+      observations?: string;
+      notifyEvent?: boolean;
+      eventMessage?: string;
+    }
+  ): Promise<Match | null> {
+    const matches = this.getMatches();
+    let updatedMatch: Match | null = null;
+
+    const newMatches = matches.map(m => {
+      if (m.id === matchId) {
+        updatedMatch = {
+          ...m,
+          scoreHome: updates.scoreHome !== undefined ? Math.max(0, updates.scoreHome) : m.scoreHome,
+          scoreAway: updates.scoreAway !== undefined ? Math.max(0, updates.scoreAway) : m.scoreAway,
+          currentPeriod: updates.currentPeriod !== undefined ? updates.currentPeriod : m.currentPeriod,
+          elapsedMinutes: updates.elapsedMinutes !== undefined ? Math.max(0, updates.elapsedMinutes) : m.elapsedMinutes,
+          periodScores: updates.periodScores !== undefined ? updates.periodScores : m.periodScores,
+          liveStatusText: updates.liveStatusText !== undefined ? updates.liveStatusText : m.liveStatusText,
+          observations: updates.observations !== undefined ? updates.observations : m.observations
+        };
+        return updatedMatch;
+      }
+      return m;
+    });
+
+    if (updatedMatch) {
+      this.saveMatches(newMatches);
+      try {
+        await setDoc(doc(db, 'matches', matchId), updatedMatch);
+      } catch (e) {
+        console.warn('Firestore updateLiveMatchDetails error:', e);
+      }
+
+      if (updates.notifyEvent && updates.eventMessage) {
+        audioNotification.playGoal();
+        this.addNotification({
+          title: `Marcador en Vivo: ${(updatedMatch as Match).sport}`,
+          message: updates.eventMessage,
+          type: 'score_update',
+          read: false,
+          relatedId: matchId
+        });
+      }
+    }
+    return updatedMatch;
+  }
+
+  public static async recordMatchLiveEvent(
+    matchId: string,
+    eventData: {
+      type: 'gol' | 'punto' | 'triple' | 'penal' | 'falta' | 'amarilla' | 'roja' | 'cambio_periodo';
+      minute: number;
+      playerName: string;
+      playerNumber?: number;
+      teamId: string;
+      teamName: string;
+      scoreDeltaHome?: number;
+      scoreDeltaAway?: number;
+      description?: string;
+    }
+  ): Promise<Match | null> {
+    const matches = this.getMatches();
+    let updatedMatch: Match | null = null;
+
+    const newMatches = matches.map(m => {
+      if (m.id === matchId) {
+        const curScoreHome = m.scoreHome ?? 0;
+        const curScoreAway = m.scoreAway ?? 0;
+        const nextScoreHome = Math.max(0, curScoreHome + (eventData.scoreDeltaHome || 0));
+        const nextScoreAway = Math.max(0, curScoreAway + (eventData.scoreDeltaAway || 0));
+
+        const nextScoreEvents = [...(m.scoreEvents || [])];
+        const nextInfractions = [...(m.infractions || [])];
+
+        if (['gol', 'punto', 'triple', 'penal'].includes(eventData.type)) {
+          nextScoreEvents.push({
+            id: `sc-ev-${Date.now()}`,
+            minute: eventData.minute,
+            playerName: eventData.playerName,
+            playerNumber: eventData.playerNumber || 10,
+            teamId: eventData.teamId,
+            type: eventData.type as 'gol' | 'punto' | 'triple' | 'penal'
+          });
+        } else if (['amarilla', 'roja'].includes(eventData.type)) {
+          nextInfractions.push({
+            id: `inf-ev-${Date.now()}`,
+            type: eventData.type as 'amarilla' | 'roja',
+            minute: eventData.minute,
+            playerName: eventData.playerName,
+            playerNumber: eventData.playerNumber || 10,
+            teamId: eventData.teamId,
+            reason: eventData.description || 'Infracción durante el juego'
+          });
+        }
+
+        updatedMatch = {
+          ...m,
+          scoreHome: nextScoreHome,
+          scoreAway: nextScoreAway,
+          elapsedMinutes: Math.max(m.elapsedMinutes || 0, eventData.minute),
+          scoreEvents: nextScoreEvents,
+          infractions: nextInfractions,
+          liveStatusText: eventData.type === 'cambio_periodo' ? (eventData.description || 'Cambio de período') : m.liveStatusText
+        };
+        return updatedMatch;
+      }
+      return m;
+    });
+
+    if (updatedMatch) {
+      this.saveMatches(newMatches);
+
+      if (['gol', 'punto', 'triple', 'penal'].includes(eventData.type)) {
+        audioNotification.playGoal();
+      } else {
+        audioNotification.playWhistle(false);
+      }
+
+      try {
+        await setDoc(doc(db, 'matches', matchId), updatedMatch);
+      } catch (e) {
+        console.warn('Firestore recordMatchLiveEvent error:', e);
+      }
+
+      const eventTitle = eventData.type === 'gol'
+        ? `⚽ ¡GOL DE ${eventData.teamName.toUpperCase()}!`
+        : eventData.type === 'triple'
+        ? `🏀 ¡TRIPLE ESPECTACULAR DE ${eventData.teamName.toUpperCase()}!`
+        : eventData.type === 'punto'
+        ? `🔥 ¡PUNTO EN VIVO: ${eventData.teamName}!`
+        : eventData.type === 'amarilla'
+        ? `🟨 Tarjeta Amarilla: ${eventData.playerName}`
+        : eventData.type === 'roja'
+        ? `🟥 Tarjeta Roja: ${eventData.playerName}`
+        : `⏱️ Evento en Vivo • ${(updatedMatch as Match).sport}`;
+
+      this.addNotification({
+        title: eventTitle,
+        message: `Minuto ${eventData.minute}': ${eventData.playerName} (${eventData.teamName}). Marcador actual: ${(updatedMatch as Match).teamHome.name} ${(updatedMatch as Match).scoreHome} - ${(updatedMatch as Match).scoreAway} ${(updatedMatch as Match).teamAway.name} en ${(updatedMatch as Match).venue}.`,
+        type: 'score_update',
+        read: false,
+        relatedId: matchId
+      });
+    }
+
     return updatedMatch;
   }
 
